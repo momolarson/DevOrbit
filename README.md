@@ -4,7 +4,7 @@
 
 ## What's This About?
 
-Tired of managers asking "how productive are you?" in weekly 1:1s? Want to show them exactly what productivity looks like with cold, hard data? DevOrbit transforms your messy GitHub activity into beautiful charts that scream "I don't need micromanagement" louder than your mechanical keyboard at 2 AM.
+Why wait for managers to ask about productivity when you can eliminate the middleman entirely? DevOrbit transforms your GitHub activity into actionable data that helps you prioritize work, optimize workflows, and make engineering decisions without needing someone else to tell you what's important. Because the best manager is no manager at all.
 
 This React-based dashboard analyzes your commits, PRs, and code reviews to help you:
 - **Optimize your workflow** (so you can work smarter, not harder)
