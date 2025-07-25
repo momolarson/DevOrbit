@@ -1,7 +1,7 @@
 import { useAuth } from '../hooks/useAuth'
 
 export default function Header({ sidebarOpen, setSidebarOpen }) {
-  const { user, login, logout, isAuthenticated } = useAuth()
+  const { user, login, logout, isAuthenticated, linearUser, loginLinear, logoutLinear, isLinearAuthenticated } = useAuth()
 
   return (
     <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
@@ -19,11 +19,35 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
           
           <div>
             <h1 className="text-xl font-bold text-white">DevOrbit</h1>
-            <p className="text-sm text-gray-400">GitHub Analytics Dashboard</p>
+            <p className="text-sm text-gray-400">GitHub & Linear Analytics Dashboard</p>
           </div>
         </div>
         
         <div className="flex items-center space-x-4">
+          {/* Linear Authentication */}
+          {isLinearAuthenticated ? (
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 bg-gray-700 px-3 py-1 rounded-lg">
+                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                <span className="text-sm text-white">{linearUser?.displayName || linearUser?.name}</span>
+                <button
+                  onClick={logoutLinear}
+                  className="text-gray-400 hover:text-white text-xs"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={loginLinear}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors"
+            >
+              Connect Linear
+            </button>
+          )}
+
+          {/* GitHub Authentication */}
           {isAuthenticated ? (
             <div className="flex items-center space-x-3">
               <img
