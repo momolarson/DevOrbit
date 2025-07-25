@@ -87,7 +87,7 @@ export default function CommitChart({ repository }) {
     // Count actual commits
     commits.forEach(commit => {
       const date = new Date(commit.commit.author.date).toISOString().split('T')[0]
-      if (commitsByDate.hasOwnProperty(date)) {
+      if (Object.prototype.hasOwnProperty.call(commitsByDate, date)) {
         commitsByDate[date]++
       }
     })

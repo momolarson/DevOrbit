@@ -80,7 +80,7 @@ export default function Dashboard({ currentView = 'overview', onViewChange }) {
           </div>
           <h2 className="text-2xl font-bold text-white mb-4">Welcome to DevOrbit</h2>
           <p className="text-gray-400 mb-8 max-w-md mx-auto">
-            Analyze your team's GitHub performance and discover insights to improve collaboration and code quality.
+            Analyze your team&apos;s GitHub performance and discover insights to improve collaboration and code quality.
           </p>
           <p className="text-sm text-gray-500">
             Please login with GitHub to get started.

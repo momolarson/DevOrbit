@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Line, Bar, Doughnut } from 'react-chartjs-2'
+import { Bar, Doughnut } from 'react-chartjs-2'
 import { useAuth } from '../../hooks/useAuth'
 
 export default function TeamDashboard({ repository, onBack }) {

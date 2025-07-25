@@ -39,13 +39,6 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = () => {
-    // GitHub OAuth flow
-    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID || 'your_github_client_id'
-    const redirectUri = `${window.location.origin}/auth/callback`
-    const scope = 'repo user'
-    
-    const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`
-    
     // For demo purposes, we'll use personal access token flow
     const personalToken = prompt(
       'For development, please enter your GitHub Personal Access Token with repo and user scopes:\n\n' +

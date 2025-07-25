@@ -195,7 +195,7 @@ export default function TeamCompatibility({ repository }) {
               </svg>
               <h3 className="text-lg font-medium text-gray-400 mb-2">No Team Collaboration Found</h3>
               <p className="text-gray-500 text-sm max-w-sm mx-auto">
-                This repository doesn't have recent pull request reviews, or team members may not be actively collaborating.
+                This repository doesn&apos;t have recent pull request reviews, or team members may not be actively collaborating.
               </p>
               <p className="text-gray-600 text-xs mt-2">
                 Check the browser console for API debugging information.

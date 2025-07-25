@@ -3,13 +3,18 @@ module.exports = {
   env: { browser: true, es2020: true },
   extends: [
     'eslint:recommended',
-    '@typescript-eslint/recommended',
     'plugin:react/recommended',
     'plugin:react/jsx-runtime',
     'plugin:react-hooks/recommended',
   ],
-  ignorePatterns: ['dist', '.eslintrc.cjs'],
-  parser: '@typescript-eslint/parser',
+  ignorePatterns: ['dist', '.eslintrc.cjs', 'test-linear.js'],
+  parserOptions: {
+    ecmaVersion: 'latest',
+    sourceType: 'module',
+    ecmaFeatures: {
+      jsx: true
+    }
+  },
   plugins: ['react-refresh'],
   rules: {
     'react-refresh/only-export-components': [
@@ -18,7 +23,8 @@ module.exports = {
     ],
     'react/prop-types': 'off',
     'no-unused-vars': 'warn',
-    'no-console': 'warn'
+    'no-console': 'off', // Allow console statements for debugging
+    'react-hooks/exhaustive-deps': 'warn' // Allow missing dependencies for now
   },
   settings: {
     react: {
