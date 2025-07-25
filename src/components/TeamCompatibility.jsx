@@ -14,21 +14,25 @@ export default function TeamCompatibility({ repository }) {
 
   const fetchCollaborationData = async () => {
     setLoading(true)
+    setCollaborations([])
     
     try {
       // Fetch recent pull requests with reviews
-      const prsResponse = await fetch(
-        `https://api.github.com/repos/${repository.owner.login}/${repository.name}/pulls?state=all&per_page=30`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
+      const prsUrl = `https://api.github.com/repos/${repository.owner.login}/${repository.name}/pulls?state=all&per_page=30`
+      console.log('Fetching PRs for team compatibility from:', prsUrl)
+      
+      const prsResponse = await fetch(prsUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
         }
-      )
+      })
+
+      console.log('Team compatibility PRs response status:', prsResponse.status)
 
       if (prsResponse.ok) {
         const prs = await prsResponse.json()
+        console.log('Fetched PRs for team analysis:', prs.length)
         
         // Track collaborations between authors and reviewers
         const collaborationMap = new Map()
@@ -36,18 +40,19 @@ export default function TeamCompatibility({ repository }) {
         for (const pr of prs.slice(0, 10)) { // Limit to avoid rate limits
           try {
             // Fetch reviews for this PR
-            const reviewsResponse = await fetch(
-              `https://api.github.com/repos/${repository.owner.login}/${repository.name}/pulls/${pr.number}/reviews`,
-              {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Accept': 'application/vnd.github.v3+json'
-                }
+            const reviewsUrl = `https://api.github.com/repos/${repository.owner.login}/${repository.name}/pulls/${pr.number}/reviews`
+            console.log(`Fetching reviews for PR ${pr.number}`)
+            
+            const reviewsResponse = await fetch(reviewsUrl, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github.v3+json'
               }
-            )
+            })
             
             if (reviewsResponse.ok) {
               const reviews = await reviewsResponse.json()
+              console.log(`PR ${pr.number} has ${reviews.length} reviews`)
               
               reviews.forEach(review => {
                 if (review.user.login !== pr.user.login) { // Don't count self-reviews
@@ -83,7 +88,11 @@ export default function TeamCompatibility({ repository }) {
           .filter(collab => collab.prsReviewed > 0)
           .sort((a, b) => b.prsReviewed - a.prsReviewed)
         
+        console.log('Total collaborations found:', collaborationArray.length)
         setCollaborations(collaborationArray)
+      } else {
+        const errorText = await prsResponse.text()
+        console.error('Team compatibility API Error:', prsResponse.status, errorText)
       }
     } catch (error) {
       console.error('Error fetching collaboration data:', error)
@@ -180,14 +189,29 @@ export default function TeamCompatibility({ repository }) {
           })}
           
           {collaborations.length === 0 && (
-            <div className="text-center py-8 text-gray-400">
-              No collaboration data found. Try analyzing a repository with more pull request activity.
+            <div className="text-center py-8">
+              <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <h3 className="text-lg font-medium text-gray-400 mb-2">No Team Collaboration Found</h3>
+              <p className="text-gray-500 text-sm max-w-sm mx-auto">
+                This repository doesn't have recent pull request reviews, or team members may not be actively collaborating.
+              </p>
+              <p className="text-gray-600 text-xs mt-2">
+                Check the browser console for API debugging information.
+              </p>
             </div>
           )}
         </div>
       ) : (
-        <div className="text-center py-12 text-gray-400">
-          No collaboration data available
+        <div className="text-center py-12">
+          <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          <h3 className="text-lg font-medium text-gray-400 mb-2">Unable to Load Team Data</h3>
+          <p className="text-gray-500 text-sm max-w-sm mx-auto">
+            There was an issue loading collaboration data. Check your network connection and GitHub token permissions.
+          </p>
         </div>
       )}
       

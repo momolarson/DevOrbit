@@ -36,26 +36,37 @@ export default function CommitChart({ repository }) {
 
   const fetchCommitData = async () => {
     setLoading(true)
+    setChartData(null)
     
     try {
       const daysAgo = new Date(Date.now() - timeRange * 24 * 60 * 60 * 1000).toISOString()
+      const url = `https://api.github.com/repos/${repository.owner.login}/${repository.name}/commits?since=${daysAgo}&per_page=100`
       
-      const response = await fetch(
-        `https://api.github.com/repos/${repository.owner.login}/${repository.name}/commits?since=${daysAgo}&per_page=100`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
+      console.log('Fetching commit chart data from:', url)
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
         }
-      )
+      })
+
+      console.log('Commit chart response status:', response.status)
 
       if (response.ok) {
         const commits = await response.json()
+        console.log('Chart commits fetched:', commits.length)
         processCommitData(commits)
+      } else {
+        const errorText = await response.text()
+        console.error('Chart API Error:', response.status, errorText)
+        // Still process with empty data to show empty chart
+        processCommitData([])
       }
     } catch (error) {
-      console.error('Error fetching commits:', error)
+      console.error('Error fetching commits for chart:', error)
+      // Show empty chart on error
+      processCommitData([])
     } finally {
       setLoading(false)
     }

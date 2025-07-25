@@ -5,9 +5,10 @@ import CommentAnalysis from '../components/CommentAnalysis'
 import TeamCompatibility from '../components/TeamCompatibility'
 import SummaryCards from '../components/SummaryCards'
 import ExportTools from '../components/ExportTools'
+import DebugPanel from '../components/DebugPanel'
 
 export default function Dashboard() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, token } = useAuth()
   const [selectedRepo, setSelectedRepo] = useState(null)
   const [dashboardData, setDashboardData] = useState({
     commits: [],
@@ -116,6 +117,9 @@ export default function Dashboard() {
           <ExportTools repository={selectedRepo} data={dashboardData} />
         </div>
       </div>
+      
+      {/* Debug Panel */}
+      <DebugPanel repository={selectedRepo} token={token} />
     </div>
   )
 }

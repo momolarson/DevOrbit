@@ -23,19 +23,22 @@ export default function SummaryCards({ repository }) {
     try {
       // Fetch commits for the last 30 days
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      const url = `https://api.github.com/repos/${repository.owner.login}/${repository.name}/commits?since=${thirtyDaysAgo}&per_page=100`
       
-      const commitsResponse = await fetch(
-        `https://api.github.com/repos/${repository.owner.login}/${repository.name}/commits?since=${thirtyDaysAgo}&per_page=100`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
+      console.log('Fetching commits from:', url)
+      
+      const commitsResponse = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
         }
-      )
+      })
+
+      console.log('Commits response status:', commitsResponse.status)
 
       if (commitsResponse.ok) {
         const commits = await commitsResponse.json()
+        console.log('Fetched commits:', commits.length)
         
         // Calculate metrics
         const commitsByDay = {}
@@ -55,10 +58,20 @@ export default function SummaryCards({ repository }) {
           activeDays,
           loading: false
         })
+      } else {
+        const errorText = await commitsResponse.text()
+        console.error('API Error:', commitsResponse.status, errorText)
+        throw new Error(`API responded with status ${commitsResponse.status}`)
       }
     } catch (error) {
       console.error('Error fetching metrics:', error)
-      setMetrics(prev => ({ ...prev, loading: false }))
+      setMetrics({
+        totalCommits: 'Error',
+        avgCommitsPerDay: 'Error',
+        medianResponseTime: 'Error',
+        activeDays: 'Error',
+        loading: false
+      })
     }
   }
 
