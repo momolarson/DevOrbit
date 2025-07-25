@@ -6,8 +6,12 @@ import TeamCompatibility from '../components/TeamCompatibility'
 import SummaryCards from '../components/SummaryCards'
 import ExportTools from '../components/ExportTools'
 import DebugPanel from '../components/DebugPanel'
+import CommitsDashboard from '../components/dashboards/CommitsDashboard'
+import CommentsDashboard from '../components/dashboards/CommentsDashboard'
+import CodeDashboard from '../components/dashboards/CodeDashboard'
+import TeamDashboard from '../components/dashboards/TeamDashboard'
 
-export default function Dashboard() {
+export default function Dashboard({ currentView = 'overview', onViewChange }) {
   const { isAuthenticated, token } = useAuth()
   const [selectedRepo, setSelectedRepo] = useState(null)
   const [dashboardData, setDashboardData] = useState({
@@ -35,6 +39,29 @@ export default function Dashboard() {
     window.addEventListener('storage', handleStorageChange)
     return () => window.removeEventListener('storage', handleStorageChange)
   }, [])
+
+  const handleBackToOverview = () => {
+    if (onViewChange) {
+      onViewChange('overview')
+    }
+  }
+
+  // Render specific dashboard views
+  if (selectedRepo && currentView !== 'overview') {
+    switch (currentView) {
+      case 'commits':
+        return <CommitsDashboard repository={selectedRepo} onBack={handleBackToOverview} />
+      case 'comments':
+        return <CommentsDashboard repository={selectedRepo} onBack={handleBackToOverview} />
+      case 'code':
+        return <CodeDashboard repository={selectedRepo} onBack={handleBackToOverview} />
+      case 'team':
+        return <TeamDashboard repository={selectedRepo} onBack={handleBackToOverview} />
+      default:
+        setCurrentView('overview')
+        break
+    }
+  }
 
   if (!isAuthenticated) {
     return (

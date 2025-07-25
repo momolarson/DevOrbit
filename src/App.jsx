@@ -9,6 +9,11 @@ import './App.css'
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [currentView, setCurrentView] = useState('overview')
+
+  const handleViewChange = (view) => {
+    setCurrentView(view)
+  }
 
   return (
     <AuthProvider>
@@ -16,12 +21,12 @@ function App() {
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         
         <div className="flex">
-          <Sidebar isOpen={sidebarOpen} />
+          <Sidebar isOpen={sidebarOpen} onViewChange={handleViewChange} />
           
           <main className={`flex-1 transition-all duration-300 ${
             sidebarOpen ? 'ml-80' : 'ml-0'
           }`}>
-            <Dashboard />
+            <Dashboard currentView={currentView} onViewChange={setCurrentView} />
           </main>
         </div>
         

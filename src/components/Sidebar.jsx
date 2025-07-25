@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { toast } from 'react-toastify'
 
-export default function Sidebar({ isOpen }) {
+export default function Sidebar({ isOpen, onViewChange }) {
   const { token, isAuthenticated } = useAuth()
   const [repositories, setRepositories] = useState([])
   const [selectedRepo, setSelectedRepo] = useState(null)
@@ -155,17 +155,38 @@ export default function Sidebar({ isOpen }) {
           {showImprovements && (
             <div className="space-y-4">
               {improvementTips.map((section) => (
-                <div key={section.category} className="bg-gray-700 rounded-lg p-4">
-                  <h3 className="font-medium text-teal-400 mb-2">{section.category}</h3>
+                <button
+                  key={section.category}
+                  onClick={() => onViewChange && onViewChange(section.category.toLowerCase())}
+                  className="w-full bg-gray-700 hover:bg-gray-600 rounded-lg p-4 text-left transition-colors duration-200 group"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium text-teal-400 group-hover:text-teal-300">
+                      {section.category}
+                    </h3>
+                    <svg 
+                      className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
                   <ul className="space-y-1">
-                    {section.tips.map((tip, index) => (
-                      <li key={index} className="text-sm text-gray-300 flex items-start">
+                    {section.tips.slice(0, 2).map((tip, index) => (
+                      <li key={index} className="text-xs text-gray-400 flex items-start">
                         <span className="text-teal-400 mr-2">•</span>
                         {tip}
                       </li>
                     ))}
+                    {section.tips.length > 2 && (
+                      <li className="text-xs text-gray-500 italic">
+                        +{section.tips.length - 2} more insights...
+                      </li>
+                    )}
                   </ul>
-                </div>
+                </button>
               ))}
             </div>
           )}
