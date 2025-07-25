@@ -4,10 +4,17 @@ import CommitChart from '../components/CommitChart'
 import CommentAnalysis from '../components/CommentAnalysis'
 import TeamCompatibility from '../components/TeamCompatibility'
 import SummaryCards from '../components/SummaryCards'
+import ExportTools from '../components/ExportTools'
 
 export default function Dashboard() {
   const { isAuthenticated } = useAuth()
   const [selectedRepo, setSelectedRepo] = useState(null)
+  const [dashboardData, setDashboardData] = useState({
+    commits: [],
+    comments: [],
+    collaborations: [],
+    metrics: {}
+  })
 
   useEffect(() => {
     // Listen for repository selection changes
@@ -104,8 +111,9 @@ export default function Dashboard() {
           <CommentAnalysis repository={selectedRepo} />
         </div>
         
-        <div>
+        <div className="space-y-8">
           <TeamCompatibility repository={selectedRepo} />
+          <ExportTools repository={selectedRepo} data={dashboardData} />
         </div>
       </div>
     </div>
