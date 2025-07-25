@@ -14,7 +14,7 @@ import TeamDashboard from '../components/dashboards/TeamDashboard'
 export default function Dashboard({ currentView = 'overview', onViewChange }) {
   const { isAuthenticated, token } = useAuth()
   const [selectedRepo, setSelectedRepo] = useState(null)
-  const [dashboardData, setDashboardData] = useState({
+  const [dashboardData] = useState({
     commits: [],
     comments: [],
     collaborations: [],
@@ -58,7 +58,9 @@ export default function Dashboard({ currentView = 'overview', onViewChange }) {
       case 'team':
         return <TeamDashboard repository={selectedRepo} onBack={handleBackToOverview} />
       default:
-        setCurrentView('overview')
+        if (onViewChange) {
+          onViewChange('overview')
+        }
         break
     }
   }
