@@ -6,10 +6,12 @@ import TeamCompatibility from '../components/TeamCompatibility'
 import SummaryCards from '../components/SummaryCards'
 import ExportTools from '../components/ExportTools'
 import DebugPanel from '../components/DebugPanel'
+import LinearCorrelation from '../components/LinearCorrelation'
 import CommitsDashboard from '../components/dashboards/CommitsDashboard'
 import CommentsDashboard from '../components/dashboards/CommentsDashboard'
 import CodeDashboard from '../components/dashboards/CodeDashboard'
 import TeamDashboard from '../components/dashboards/TeamDashboard'
+import LinearDashboard from '../components/dashboards/LinearDashboard'
 
 export default function Dashboard({ currentView = 'overview', onViewChange }) {
   const { isAuthenticated, token } = useAuth()
@@ -47,16 +49,18 @@ export default function Dashboard({ currentView = 'overview', onViewChange }) {
   }
 
   // Render specific dashboard views
-  if (selectedRepo && currentView !== 'overview') {
+  if (currentView !== 'overview') {
     switch (currentView) {
       case 'commits':
-        return <CommitsDashboard repository={selectedRepo} onBack={handleBackToOverview} />
+        return selectedRepo ? <CommitsDashboard repository={selectedRepo} onBack={handleBackToOverview} /> : null
       case 'comments':
-        return <CommentsDashboard repository={selectedRepo} onBack={handleBackToOverview} />
+        return selectedRepo ? <CommentsDashboard repository={selectedRepo} onBack={handleBackToOverview} /> : null
       case 'code':
-        return <CodeDashboard repository={selectedRepo} onBack={handleBackToOverview} />
+        return selectedRepo ? <CodeDashboard repository={selectedRepo} onBack={handleBackToOverview} /> : null
       case 'team':
-        return <TeamDashboard repository={selectedRepo} onBack={handleBackToOverview} />
+        return selectedRepo ? <TeamDashboard repository={selectedRepo} onBack={handleBackToOverview} /> : null
+      case 'linear':
+        return <LinearDashboard onBack={handleBackToOverview} />
       default:
         if (onViewChange) {
           onViewChange('overview')
@@ -76,7 +80,7 @@ export default function Dashboard({ currentView = 'overview', onViewChange }) {
           </div>
           <h2 className="text-2xl font-bold text-white mb-4">Welcome to DevOrbit</h2>
           <p className="text-gray-400 mb-8 max-w-md mx-auto">
-            Analyze your team's GitHub performance and discover insights to improve collaboration and code quality.
+            Analyze your team&apos;s GitHub performance and discover insights to improve collaboration and code quality.
           </p>
           <p className="text-sm text-gray-500">
             Please login with GitHub to get started.
@@ -143,8 +147,13 @@ export default function Dashboard({ currentView = 'overview', onViewChange }) {
         
         <div className="space-y-8">
           <TeamCompatibility repository={selectedRepo} />
-          <ExportTools repository={selectedRepo} data={dashboardData} />
+          <LinearCorrelation repository={selectedRepo} />
         </div>
+      </div>
+      
+      {/* Export Tools */}
+      <div className="grid grid-cols-1">
+        <ExportTools repository={selectedRepo} data={dashboardData} />
       </div>
       
       {/* Debug Panel */}

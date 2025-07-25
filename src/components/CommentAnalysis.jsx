@@ -216,7 +216,7 @@ export default function CommentAnalysis({ repository }) {
           </svg>
           <h3 className="text-lg font-medium text-gray-400 mb-2">No PR Comments Found</h3>
           <p className="text-gray-500 text-sm max-w-sm mx-auto">
-            This repository doesn't have any recent pull request comments, or they may be in private repositories that require different permissions.
+            This repository doesn&apos;t have any recent pull request comments, or they may be in private repositories that require different permissions.
           </p>
           <p className="text-gray-600 text-xs mt-2">
             Check the browser console for API debugging information.

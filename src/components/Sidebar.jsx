@@ -80,6 +80,14 @@ export default function Sidebar({ isOpen, onViewChange }) {
         'Avoid "in-squad only" review patterns',
         'Share expertise through code review comments'
       ]
+    },
+    {
+      category: 'Linear',
+      tips: [
+        'Connect Linear to analyze story points vs performance',
+        'Track velocity and estimate accuracy',
+        'Optimize workload distribution across team'
+      ]
     }
   ]
 
