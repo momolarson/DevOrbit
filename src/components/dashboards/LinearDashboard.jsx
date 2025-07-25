@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import LinearAPI from '../../utils/linearApi'
+import StoryPointEstimatorComponent from '../StoryPointEstimator'
 import { toast } from 'react-toastify'
 
 export default function LinearDashboard() {
@@ -304,6 +305,9 @@ export default function LinearDashboard() {
               </div>
             </div>
           )}
+
+          {/* AI Story Point Estimator */}
+          <StoryPointEstimatorComponent />
 
           {/* Recent Issues */}
           <div className="card">
