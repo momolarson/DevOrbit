@@ -28,7 +28,7 @@ jobs:
       run: npm ci
 
     - name: Run ESLint
-      run: npm run lint
+      run: npm run lint:ci
 
     - name: Run tests
       run: npm test -- --coverage --watchAll=false
@@ -57,10 +57,10 @@ jobs:
       run: npm run build
 
     - name: Analyze bundle size
-      run: npx vite-bundle-analyzer
+      run: npx vite-bundle-analyzer || echo "Bundle analysis skipped - analyzer not available"
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dist
         path: dist/
@@ -81,5 +81,5 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Run dependency check
-      run: npx audit-ci
+    - name: Run security audit
+      run: npm run audit
