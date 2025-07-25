@@ -330,7 +330,7 @@ export default function CommitsDashboard({ repository, onBack }) {
             <div className="card">
               <h3 className="text-lg font-semibold text-white mb-4">Top Contributors</h3>
               <div className="space-y-3">
-                {commitData.patterns.authors?.slice(0, 5).map(([author, stats], index) => (
+                {commitData.patterns.authors?.slice(0, 5).map(([author, stats]) => (
                   <div key={author} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center text-xs font-bold">

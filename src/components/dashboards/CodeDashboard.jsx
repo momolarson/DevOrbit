@@ -479,7 +479,7 @@ export default function CodeDashboard({ repository, onBack }) {
             <div className="card">
               <h3 className="text-lg font-semibold text-white mb-4">Frequently Changed Files</h3>
               <div className="space-y-3 max-h-64 overflow-y-auto">
-                {codeData.patterns.topChangedFiles?.slice(0, 8).map(([filename, stats], index) => (
+                {codeData.patterns.topChangedFiles?.slice(0, 8).map(([filename, stats]) => (
                   <div key={filename} className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="text-white font-mono text-sm truncate" title={filename}>
@@ -507,7 +507,7 @@ export default function CodeDashboard({ repository, onBack }) {
               <div>
                 <h4 className="text-md font-medium text-gray-300 mb-3">Contributors by Churn Rate</h4>
                 <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {codeData.patterns.userChurn?.map(([author, stats], index) => (
+                  {codeData.patterns.userChurn?.map(([author, stats]) => (
                     <div key={author} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
                       <div className="flex-1 min-w-0">
                         <div className="text-white font-medium truncate" title={author}>
@@ -605,7 +605,7 @@ export default function CodeDashboard({ repository, onBack }) {
             <div className="card">
               <h3 className="text-lg font-semibold text-white mb-4">File Complexity</h3>
               <div className="space-y-3 max-h-64 overflow-y-auto">
-                {codeData.patterns.complexFiles?.slice(0, 6).map((file, index) => (
+                {codeData.patterns.complexFiles?.slice(0, 6).map((file) => (
                   <div key={file.filename} className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="text-white font-mono text-sm truncate" title={file.filename}>

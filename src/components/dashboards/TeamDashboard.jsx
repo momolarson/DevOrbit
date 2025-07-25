@@ -92,7 +92,7 @@ export default function TeamDashboard({ repository, onBack }) {
     const teamMembers = {}
     const collaborationMatrix = {}
     const reviewPatterns = {}
-    const workTimePatterns = {}
+    // const workTimePatterns = {}
 
     // Process contributors
     contributors.forEach(contributor => {
@@ -213,8 +213,8 @@ export default function TeamDashboard({ repository, onBack }) {
     })
   }
 
-  const analyzeKnowledgeDistribution = (members, prs) => {
-    const fileExpertise = {}
+  const analyzeKnowledgeDistribution = (members) => {
+    // const fileExpertise = {}
     
     // This would require additional API calls to get file changes per PR
     // For now, we'll use a simplified analysis

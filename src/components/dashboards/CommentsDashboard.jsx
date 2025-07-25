@@ -106,7 +106,7 @@ export default function CommentsDashboard({ repository, onBack }) {
     }
   }
 
-  const processCommentAnalytics = (comments, reviews, prs) => {
+  const processCommentAnalytics = (comments, reviews) => {
     // Response time analysis
     const responseTimes = []
     const commentLengths = []
@@ -373,7 +373,7 @@ export default function CommentsDashboard({ repository, onBack }) {
             <div className="card">
               <h3 className="text-lg font-semibold text-white mb-4">Top Reviewers</h3>
               <div className="space-y-3">
-                {commentData.patterns.reviewers?.slice(0, 5).map(([reviewer, stats], index) => (
+                {commentData.patterns.reviewers?.slice(0, 5).map(([reviewer, stats]) => (
                   <div key={reviewer} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold">
