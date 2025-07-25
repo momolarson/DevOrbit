@@ -1,4 +1,4 @@
-# GitPrime - GitHub Analytics Dashboard
+# DevOrbit - GitHub Analytics Dashboard
 
 A React-based web application for analyzing software engineers' performance and team compatibility using GitHub data. Provides insights into commits, pull request comments, and improvement analytics for engineering managers.
 
@@ -37,7 +37,7 @@ A React-based web application for analyzing software engineers' performance and 
 1. Clone the repository:
    ```bash
    git clone <repository-url>
-   cd gitprime
+   cd devorbit
    ```
 
 2. Install dependencies:

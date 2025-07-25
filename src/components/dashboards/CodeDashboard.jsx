@@ -111,6 +111,8 @@ export default function CodeDashboard({ repository, onBack }) {
     const fileTypes = {}
     const fileChanges = {}
     const codeChurn = []
+    const userChurn = {}
+    const dailyChurn = {}
     const complexityMetrics = []
     let totalAdditions = 0
     let totalDeletions = 0
@@ -122,6 +124,8 @@ export default function CodeDashboard({ repository, onBack }) {
         const commitAdditions = commit.stats?.additions || 0
         const commitDeletions = commit.stats?.deletions || 0
         const commitTotal = commitAdditions + commitDeletions
+        const author = commit.commit.author.name || 'Unknown'
+        const date = commit.commit.author.date.split('T')[0]
         
         totalAdditions += commitAdditions
         totalDeletions += commitDeletions
@@ -132,9 +136,36 @@ export default function CodeDashboard({ repository, onBack }) {
           refactorCommits++
         }
 
+        // Calculate code churn by user
+        if (!userChurn[author]) {
+          userChurn[author] = {
+            totalAdditions: 0,
+            totalDeletions: 0,
+            commits: 0,
+            churnRate: 0,
+            avgChurnPerCommit: 0
+          }
+        }
+        userChurn[author].totalAdditions += commitAdditions
+        userChurn[author].totalDeletions += commitDeletions
+        userChurn[author].commits += 1
+
+        // Calculate daily churn
+        if (!dailyChurn[date]) {
+          dailyChurn[date] = {
+            additions: 0,
+            deletions: 0,
+            commits: 0
+          }
+        }
+        dailyChurn[date].additions += commitAdditions
+        dailyChurn[date].deletions += commitDeletions
+        dailyChurn[date].commits += 1
+
         // Calculate code churn
         codeChurn.push({
           date: commit.commit.author.date,
+          author: author,
           additions: commitAdditions,
           deletions: commitDeletions,
           churn: commitDeletions / (commitAdditions + commitDeletions) || 0
@@ -175,6 +206,22 @@ export default function CodeDashboard({ repository, onBack }) {
     // Calculate refactor rate
     const refactorRate = commits.length > 0 ? (refactorCommits / commits.length) * 100 : 0
 
+    // Calculate user churn rates
+    Object.keys(userChurn).forEach(author => {
+      const user = userChurn[author]
+      user.churnRate = user.totalAdditions + user.totalDeletions > 0 
+        ? (user.totalDeletions / (user.totalAdditions + user.totalDeletions)) * 100 
+        : 0
+      user.avgChurnPerCommit = user.commits > 0 
+        ? (user.totalDeletions / user.commits) 
+        : 0
+    })
+
+    // Sort users by churn rate
+    const sortedUserChurn = Object.entries(userChurn)
+      .sort(([,a], [,b]) => b.churnRate - a.churnRate)
+      .slice(0, 10)
+
     // Top changed files
     const topChangedFiles = Object.entries(fileChanges)
       .sort(([,a], [,b]) => b.changes - a.changes)
@@ -213,7 +260,11 @@ export default function CodeDashboard({ repository, onBack }) {
           .slice(0, 8),
         codeChurn: codeChurn.slice(-30), // Last 30 commits
         complexFiles: mostComplexFiles,
-        topChangedFiles
+        topChangedFiles,
+        userChurn: sortedUserChurn,
+        dailyChurn: Object.entries(dailyChurn)
+          .sort(([a], [b]) => new Date(b) - new Date(a))
+          .slice(0, 14) // Last 14 days
       },
       recommendations
     })
@@ -445,6 +496,82 @@ export default function CodeDashboard({ repository, onBack }) {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* User Code Churn Section */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-white mb-4">User Code Churn Analysis</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Top Contributors by Churn */}
+              <div>
+                <h4 className="text-md font-medium text-gray-300 mb-3">Contributors by Churn Rate</h4>
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {codeData.patterns.userChurn?.map(([author, stats], index) => (
+                    <div key={author} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white font-medium truncate" title={author}>
+                          {author}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {stats.commits} commits • +{stats.totalAdditions} -{stats.totalDeletions}
+                        </div>
+                      </div>
+                      <div className="text-right ml-4">
+                        <div className={`font-bold text-lg ${
+                          stats.churnRate > 50 ? 'text-red-400' :
+                          stats.churnRate > 30 ? 'text-yellow-400' : 'text-green-400'
+                        }`}>
+                          {Math.round(stats.churnRate)}%
+                        </div>
+                        <div className="text-xs text-gray-400">churn rate</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Churn Metrics Summary */}
+              <div>
+                <h4 className="text-md font-medium text-gray-300 mb-3">Churn Insights</h4>
+                <div className="space-y-4">
+                  <div className="p-3 bg-gray-800 rounded-lg">
+                    <div className="text-sm text-gray-400">Average Churn Rate</div>
+                    <div className="text-2xl font-bold text-white">
+                      {codeData.patterns.userChurn?.length > 0 
+                        ? Math.round(codeData.patterns.userChurn.reduce((sum, [, stats]) => sum + stats.churnRate, 0) / codeData.patterns.userChurn.length)
+                        : 0}%
+                    </div>
+                  </div>
+                  <div className="p-3 bg-gray-800 rounded-lg">
+                    <div className="text-sm text-gray-400">Highest Individual Churn</div>
+                    <div className="text-2xl font-bold text-red-400">
+                      {codeData.patterns.userChurn?.length > 0 
+                        ? Math.round(codeData.patterns.userChurn[0][1].churnRate)
+                        : 0}%
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {codeData.patterns.userChurn?.length > 0 ? codeData.patterns.userChurn[0][0] : 'N/A'}
+                    </div>
+                  </div>
+                  <div className="p-3 bg-gray-800 rounded-lg">
+                    <div className="text-sm text-gray-400">Active Contributors</div>
+                    <div className="text-2xl font-bold text-blue-400">
+                      {codeData.patterns.userChurn?.length || 0}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Churn Rate Explanation */}
+            <div className="mt-6 p-4 bg-gray-800 rounded-lg border-l-4 border-teal-400">
+              <h5 className="text-sm font-medium text-white mb-2">About Code Churn</h5>
+              <p className="text-xs text-gray-300">
+                Code churn measures the percentage of code that gets deleted relative to total changes. 
+                High churn rates ({'>'}50%) may indicate rework, changing requirements, or experimental code. 
+                Moderate churn (20-40%) is normal for iterative development. Low churn ({'<'}20%) suggests stable, well-planned changes.
+              </p>
             </div>
           </div>
 

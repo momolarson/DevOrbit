@@ -1,8 +1,8 @@
-# GitPrime - Technical Architecture
+# DevOrbit - Technical Architecture
 
 ## Project Overview
 
-GitPrime is a React-based GitHub analytics dashboard designed to help engineering managers analyze team performance, collaboration patterns, and code quality metrics. The application integrates with the GitHub REST API to provide actionable insights for software engineering teams.
+DevOrbit is a React-based GitHub analytics dashboard designed to help engineering managers analyze team performance, collaboration patterns, and code quality metrics. The application integrates with the GitHub REST API to provide actionable insights for software engineering teams.
 
 ## Architecture
 

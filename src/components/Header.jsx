@@ -18,7 +18,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
           </button>
           
           <div>
-            <h1 className="text-xl font-bold text-white">GitPrime</h1>
+            <h1 className="text-xl font-bold text-white">DevOrbit</h1>
             <p className="text-sm text-gray-400">GitHub Analytics Dashboard</p>
           </div>
         </div>
