@@ -204,34 +204,24 @@ export class BitbucketProvider {
       
       if (userResponse.ok) {
         const userData = await userResponse.json()
-        console.log('Bitbucket user data:', userData)
         // Try user-specific repositories endpoint
         repositoriesUrl = `${this.baseUrl}/repositories/${userData.username}?pagelen=50`
       }
     } catch (error) {
-      console.log('Could not fetch user, using default endpoint')
+      // Fall back to default endpoint
     }
-    
-    console.log('Using Bitbucket repositories URL:', repositoriesUrl)
     
     const response = await fetch(repositoriesUrl, {
       headers: this.getHeaders()
     })
     
-    console.log('Bitbucket repositories response:', response.status)
-    
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Bitbucket repositories error:', errorText)
       throw new Error('Failed to fetch repositories')
     }
     
     const data = await response.json()
-    console.log('Bitbucket repositories data:', data)
     
-    return data.values.map(repo => {
-      console.log('Processing Bitbucket repo:', repo)
-      return {
+    return data.values.map(repo => ({
         id: repo.uuid,
         name: repo.name,
         fullName: repo.full_name,
@@ -246,40 +236,26 @@ export class BitbucketProvider {
         },
         provider: this.name,
         _raw: repo
-      }
-    })
+      }))
   }
 
   async fetchCommits(repository, since, perPage = 100) {
-    console.log('Bitbucket fetchCommits called with:', { repository, since, perPage })
-    
     const workspace = repository._raw?.workspace?.slug || repository._raw?.owner?.username
     const repoSlug = repository._raw?.name || repository.name
     const url = `${this.baseUrl}/repositories/${workspace}/${repoSlug}/commits?pagelen=${perPage}`
-    
-    console.log('Bitbucket commits URL:', url)
-    console.log('Workspace:', workspace, 'RepoSlug:', repoSlug)
     
     const response = await fetch(url, {
       headers: this.getHeaders()
     })
     
-    console.log('Bitbucket commits response:', response.status)
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Bitbucket commits error:', errorText)
-      throw new Error('Failed to fetch commits')
-    }
+    if (!response.ok) throw new Error('Failed to fetch commits')
     
     const data = await response.json()
-    console.log('Bitbucket commits data:', data)
     
     // Filter commits by date since Bitbucket API doesn't support since parameter
     const sinceDate = new Date(since)
-    console.log('Filtering commits since:', sinceDate)
     
-    const filteredCommits = data.values
+    return data.values
       .filter(commit => new Date(commit.date) >= sinceDate)
       .map(commit => ({
         sha: commit.hash,
@@ -295,9 +271,6 @@ export class BitbucketProvider {
         provider: this.name,
         _raw: commit
       }))
-    
-    console.log('Bitbucket processed commits:', filteredCommits)
-    return filteredCommits
   }
 
   async fetchPullRequests(repository, state = 'OPEN', perPage = 100) {

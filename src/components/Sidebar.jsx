@@ -38,13 +38,11 @@ export default function Sidebar({ isOpen, onViewChange }) {
   }
 
   const handleRepoSelect = (repo) => {
-    console.log('Sidebar: Selecting repository:', repo)
     setSelectedRepo(repo)
     localStorage.setItem('selected_repository', JSON.stringify(repo))
     toast.success(`Selected repository: ${repo.name}`)
     
     // Dispatch custom event to notify other components
-    console.log('Sidebar: Dispatching repositoryChanged event')
     window.dispatchEvent(new CustomEvent('repositoryChanged', { detail: repo }))
   }
 

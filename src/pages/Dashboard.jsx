@@ -16,11 +16,6 @@ import LinearDashboard from '../components/dashboards/LinearDashboard'
 export default function Dashboard({ currentView = 'overview', onViewChange }) {
   const { isAuthenticated, provider, gitProvider, token } = useAuth()
   const [selectedRepo, setSelectedRepo] = useState(null)
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('Dashboard: selectedRepo state changed:', selectedRepo)
-  }, [selectedRepo])
   const [dashboardData] = useState({
     commits: [],
     comments: [],
@@ -37,7 +32,6 @@ export default function Dashboard({ currentView = 'overview', onViewChange }) {
 
     // Set up listener for repository changes (custom event)
     const handleRepositoryChange = (event) => {
-      console.log('Dashboard: Repository changed via custom event:', event.detail)
       setSelectedRepo(event.detail)
     }
 
