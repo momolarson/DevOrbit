@@ -3,37 +3,32 @@ import { useAuth } from '../hooks/useAuth'
 import { toast } from 'react-toastify'
 
 export default function Sidebar({ isOpen, onViewChange }) {
-  const { token, isAuthenticated } = useAuth()
+  const { gitProvider, isAuthenticated } = useAuth()
   const [repositories, setRepositories] = useState([])
   const [selectedRepo, setSelectedRepo] = useState(null)
   const [loading, setLoading] = useState(false)
   const [showImprovements, setShowImprovements] = useState(true)
 
   useEffect(() => {
-    if (isAuthenticated && token) {
+    if (isAuthenticated && gitProvider) {
       fetchRepositories()
+      // Clear selected repo when provider changes
+      setSelectedRepo(null)
+      localStorage.removeItem('selected_repository')
+      
+      // Dispatch event to notify other components
+      window.dispatchEvent(new CustomEvent('repositoryChanged', { detail: null }))
     }
-  }, [isAuthenticated, token])
+  }, [isAuthenticated, gitProvider])
 
   const fetchRepositories = async () => {
     setLoading(true)
     try {
-      const response = await fetch('https://api.github.com/user/repos?sort=updated&per_page=50', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      })
+      const repos = await gitProvider.fetchRepositories()
+      setRepositories(repos)
       
-      if (response.ok) {
-        const repos = await response.json()
-        setRepositories(repos)
-        
-        // Cache repositories
-        localStorage.setItem('github_repositories', JSON.stringify(repos))
-      } else {
-        throw new Error('Failed to fetch repositories')
-      }
+      // Cache repositories with provider prefix
+      localStorage.setItem(`${gitProvider.name}_repositories`, JSON.stringify(repos))
     } catch (error) {
       toast.error('Failed to fetch repositories')
       console.error(error)
@@ -43,9 +38,14 @@ export default function Sidebar({ isOpen, onViewChange }) {
   }
 
   const handleRepoSelect = (repo) => {
+    console.log('Sidebar: Selecting repository:', repo)
     setSelectedRepo(repo)
     localStorage.setItem('selected_repository', JSON.stringify(repo))
     toast.success(`Selected repository: ${repo.name}`)
+    
+    // Dispatch custom event to notify other components
+    console.log('Sidebar: Dispatching repositoryChanged event')
+    window.dispatchEvent(new CustomEvent('repositoryChanged', { detail: repo }))
   }
 
   const improvementTips = [
@@ -103,7 +103,7 @@ export default function Sidebar({ isOpen, onViewChange }) {
           <h2 className="text-lg font-semibold text-white mb-4">Repository Selection</h2>
           
           {!isAuthenticated ? (
-            <p className="text-gray-400 text-sm">Please login with GitHub to select repositories</p>
+            <p className="text-gray-400 text-sm">Please login to select repositories</p>
           ) : loading ? (
             <div className="flex items-center space-x-2">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-teal-400"></div>
@@ -114,7 +114,8 @@ export default function Sidebar({ isOpen, onViewChange }) {
               <select
                 value={selectedRepo?.id || ''}
                 onChange={(e) => {
-                  const repo = repositories.find(r => r.id === parseInt(e.target.value))
+                  // Handle both string (Bitbucket UUID) and integer (GitHub) IDs
+                  const repo = repositories.find(r => r.id.toString() === e.target.value.toString())
                   if (repo) handleRepoSelect(repo)
                 }}
                 className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-400"
@@ -133,7 +134,7 @@ export default function Sidebar({ isOpen, onViewChange }) {
                   <p className="text-xs text-gray-400">{selectedRepo.description}</p>
                   <p className="text-xs text-gray-400 mt-1">
                     Language: {selectedRepo.language || 'N/A'} | 
-                    Stars: {selectedRepo.stargazers_count}
+                    Stars: {selectedRepo.stars || selectedRepo.stargazers_count || 0}
                   </p>
                 </div>
               )}

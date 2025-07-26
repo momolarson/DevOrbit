@@ -14,8 +14,13 @@ import TeamDashboard from '../components/dashboards/TeamDashboard'
 import LinearDashboard from '../components/dashboards/LinearDashboard'
 
 export default function Dashboard({ currentView = 'overview', onViewChange }) {
-  const { isAuthenticated, token } = useAuth()
+  const { isAuthenticated, provider, gitProvider, token } = useAuth()
   const [selectedRepo, setSelectedRepo] = useState(null)
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('Dashboard: selectedRepo state changed:', selectedRepo)
+  }, [selectedRepo])
   const [dashboardData] = useState({
     commits: [],
     comments: [],
@@ -30,17 +35,38 @@ export default function Dashboard({ currentView = 'overview', onViewChange }) {
       setSelectedRepo(JSON.parse(storedRepo))
     }
 
-    // Set up listener for repository changes
+    // Set up listener for repository changes (custom event)
+    const handleRepositoryChange = (event) => {
+      console.log('Dashboard: Repository changed via custom event:', event.detail)
+      setSelectedRepo(event.detail)
+    }
+
+    // Also listen for storage changes (cross-tab)
     const handleStorageChange = () => {
       const repo = localStorage.getItem('selected_repository')
       if (repo) {
         setSelectedRepo(JSON.parse(repo))
+      } else {
+        setSelectedRepo(null)
       }
     }
 
+    window.addEventListener('repositoryChanged', handleRepositoryChange)
     window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('repositoryChanged', handleRepositoryChange)
+      window.removeEventListener('storage', handleStorageChange)
+    }
   }, [])
+
+  // Clear selected repository when provider changes
+  useEffect(() => {
+    setSelectedRepo(null)
+    localStorage.removeItem('selected_repository')
+    // Dispatch event to notify other components that might be listening
+    window.dispatchEvent(new CustomEvent('repositoryChanged', { detail: null }))
+  }, [provider])
 
   const handleBackToOverview = () => {
     if (onViewChange) {
@@ -50,15 +76,39 @@ export default function Dashboard({ currentView = 'overview', onViewChange }) {
 
   // Render specific dashboard views
   if (currentView !== 'overview') {
+    if (!selectedRepo && currentView !== 'linear') {
+      return (
+        <div className="p-8">
+          <div className="text-center">
+            <div className="mx-auto w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center mb-6">
+              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-4">No Repository Selected</h2>
+            <p className="text-gray-400 mb-8 max-w-md mx-auto">
+              Please select a repository from the sidebar to view detailed analytics.
+            </p>
+            <button
+              onClick={handleBackToOverview}
+              className="btn-primary"
+            >
+              Back to Overview
+            </button>
+          </div>
+        </div>
+      )
+    }
+    
     switch (currentView) {
       case 'commits':
-        return selectedRepo ? <CommitsDashboard repository={selectedRepo} onBack={handleBackToOverview} /> : null
+        return <CommitsDashboard repository={selectedRepo} onBack={handleBackToOverview} />
       case 'comments':
-        return selectedRepo ? <CommentsDashboard repository={selectedRepo} onBack={handleBackToOverview} /> : null
+        return <CommentsDashboard repository={selectedRepo} onBack={handleBackToOverview} />
       case 'code':
-        return selectedRepo ? <CodeDashboard repository={selectedRepo} onBack={handleBackToOverview} /> : null
+        return <CodeDashboard repository={selectedRepo} onBack={handleBackToOverview} />
       case 'team':
-        return selectedRepo ? <TeamDashboard repository={selectedRepo} onBack={handleBackToOverview} /> : null
+        return <TeamDashboard repository={selectedRepo} onBack={handleBackToOverview} />
       case 'linear':
         return <LinearDashboard onBack={handleBackToOverview} />
       default:
@@ -118,13 +168,13 @@ export default function Dashboard({ currentView = 'overview', onViewChange }) {
             <p className="text-gray-400 mt-1">{selectedRepo.description}</p>
             <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
               <span>Language: {selectedRepo.language || 'N/A'}</span>
-              <span>Stars: {selectedRepo.stargazers_count}</span>
-              <span>Forks: {selectedRepo.forks_count}</span>
+              <span>Stars: {selectedRepo.stars || selectedRepo.stargazers_count || 0}</span>
+              <span>Forks: {selectedRepo.forks || selectedRepo.forks_count || 0}</span>
             </div>
           </div>
           <div className="text-right">
             <a
-              href={selectedRepo.html_url}
+              href={selectedRepo.url || selectedRepo.html_url || selectedRepo._raw?.html_url}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-primary text-sm"

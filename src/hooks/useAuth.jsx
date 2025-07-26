@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
+import { createProvider, PROVIDERS } from '../services/gitProviders'
 
 const AuthContext = createContext()
 
@@ -14,20 +15,33 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(null)
+  const [provider, setProvider] = useState(PROVIDERS.GITHUB)
+  const [gitProvider, setGitProvider] = useState(null)
   const [linearToken, setLinearToken] = useState(null)
   const [linearUser, setLinearUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // Check for stored tokens on app load
-    const storedToken = localStorage.getItem('github_token')
-    const storedUser = localStorage.getItem('github_user')
+    const storedProvider = localStorage.getItem('git_provider') || PROVIDERS.GITHUB
+    const storedToken = localStorage.getItem(`${storedProvider}_token`)
+    const storedUser = localStorage.getItem(`${storedProvider}_user`)
+    const storedUsername = localStorage.getItem(`${storedProvider}_username`)
     const storedLinearToken = localStorage.getItem('linear_token')
     const storedLinearUser = localStorage.getItem('linear_user')
+    
+    setProvider(storedProvider)
     
     if (storedToken && storedUser) {
       setToken(storedToken)
       setUser(JSON.parse(storedUser))
+      
+      // Create provider instance with username if it's Bitbucket
+      const providerInstance = storedProvider === PROVIDERS.BITBUCKET 
+        ? createProvider(storedProvider, storedToken, storedUsername)
+        : createProvider(storedProvider, storedToken)
+      
+      setGitProvider(providerInstance)
     }
     
     if (storedLinearToken && storedLinearUser) {
@@ -38,43 +52,70 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
-  const login = () => {
-    // For demo purposes, we'll use personal access token flow
-    const personalToken = prompt(
-      'For development, please enter your GitHub Personal Access Token with repo and user scopes:\n\n' +
-      '1. Go to GitHub Settings > Developer settings > Personal access tokens\n' +
-      '2. Generate a new token with "repo" and "user" scopes\n' +
-      '3. Paste it here:'
-    )
+  const login = (selectedProvider = provider) => {
+    const providerName = selectedProvider === PROVIDERS.GITHUB ? 'GitHub' : 'Bitbucket'
     
-    if (personalToken) {
-      setToken(personalToken)
-      localStorage.setItem('github_token', personalToken)
+    if (selectedProvider === PROVIDERS.BITBUCKET) {
+      // For Bitbucket, we need both username and app password
+      const username = prompt(
+        'Enter your Bitbucket username:\n\n' +
+        'This is your Bitbucket account username (not email).'
+      )
       
-      // Fetch user info to validate token
-      fetchUserInfo(personalToken)
+      if (!username) return
+      
+      const appPassword = prompt(
+        'Enter your Bitbucket App Password:\n\n' +
+        '1. Go to Bitbucket Settings > App passwords\n' +
+        '2. Create a new app password with "Repositories: Read" and "Account: Read" permissions\n' +
+        '3. Paste it here:'
+      )
+      
+      if (appPassword) {
+        setProvider(selectedProvider)
+        setToken(appPassword)
+        localStorage.setItem('git_provider', selectedProvider)
+        localStorage.setItem(`${selectedProvider}_token`, appPassword)
+        localStorage.setItem(`${selectedProvider}_username`, username)
+        
+        // Create provider instance with username and fetch user info
+        const providerInstance = createProvider(selectedProvider, appPassword, username)
+        setGitProvider(providerInstance)
+        fetchUserInfo(providerInstance)
+      }
+    } else {
+      // GitHub flow
+      const instructions = 'For development, please enter your GitHub Personal Access Token with repo and user scopes:\n\n' +
+        '1. Go to GitHub Settings > Developer settings > Personal access tokens\n' +
+        '2. Generate a new token with "repo" and "user" scopes\n' +
+        '3. Paste it here:'
+      
+      const personalToken = prompt(instructions)
+      
+      if (personalToken) {
+        setProvider(selectedProvider)
+        setToken(personalToken)
+        localStorage.setItem('git_provider', selectedProvider)
+        localStorage.setItem(`${selectedProvider}_token`, personalToken)
+        
+        // Create provider instance and fetch user info
+        const providerInstance = createProvider(selectedProvider, personalToken)
+        setGitProvider(providerInstance)
+        fetchUserInfo(providerInstance)
+      }
     }
   }
 
-  const fetchUserInfo = async (authToken) => {
+  const fetchUserInfo = async (providerInstance) => {
     try {
-      const response = await fetch('https://api.github.com/user', {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      })
-      
-      if (response.ok) {
-        const userData = await response.json()
-        setUser(userData)
-        localStorage.setItem('github_user', JSON.stringify(userData))
-        toast.success(`Welcome, ${userData.login}!`)
-      } else {
-        throw new Error('Invalid token')
-      }
+      const userData = await providerInstance.fetchUser()
+      setUser(userData)
+      localStorage.setItem(`${provider}_user`, JSON.stringify(userData))
+      const providerName = provider === PROVIDERS.GITHUB ? 'GitHub' : 'Bitbucket'
+      toast.success(`Welcome, ${userData.username}! Connected to ${providerName}`)
     } catch (error) {
-      toast.error('Failed to authenticate with GitHub')
+      const providerName = provider === PROVIDERS.GITHUB ? 'GitHub' : 'Bitbucket'
+      toast.error(`Failed to authenticate with ${providerName}`)
       logout()
     }
   }
@@ -175,14 +216,19 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setUser(null)
     setToken(null)
-    localStorage.removeItem('github_token')
-    localStorage.removeItem('github_user')
+    setGitProvider(null)
+    localStorage.removeItem(`${provider}_token`)
+    localStorage.removeItem(`${provider}_user`)
+    localStorage.removeItem(`${provider}_username`)
+    localStorage.removeItem('git_provider')
     toast.info('Logged out successfully')
   }
 
   const value = {
     user,
     token,
+    provider,
+    gitProvider,
     linearUser,
     linearToken,
     loading,
@@ -190,6 +236,7 @@ export function AuthProvider({ children }) {
     loginLinear,
     logout,
     logoutLinear,
+    setProvider,
     isAuthenticated: !!token,
     isLinearAuthenticated: !!linearToken
   }
