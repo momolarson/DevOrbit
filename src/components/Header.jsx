@@ -1,8 +1,14 @@
 import { useAuth } from '../hooks/useAuth'
 import { PROVIDERS, getProviderDisplayName } from '../services/gitProviders'
+import { PROJECT_PROVIDERS, getProjectProviderDisplayName } from '../services/projectProviders'
 
 export default function Header({ sidebarOpen, setSidebarOpen }) {
-  const { user, provider, login, logout, isAuthenticated, linearUser, loginLinear, logoutLinear, isLinearAuthenticated, setProvider } = useAuth()
+  const { 
+    user, provider, login, logout, isAuthenticated, 
+    linearUser, loginLinear, logoutLinear, isLinearAuthenticated,
+    jiraUser, loginJira, logoutJira, isJiraAuthenticated,
+    projectProvider, setProvider, setProjectProvider
+  } = useAuth()
 
   return (
     <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
@@ -20,17 +26,32 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
           
           <div>
             <h1 className="text-xl font-bold text-white">DevOrbit</h1>
-            <p className="text-sm text-gray-400">{getProviderDisplayName(provider)} & Linear Analytics Dashboard</p>
+            <p className="text-sm text-gray-400">{getProviderDisplayName(provider)} & Project Analytics Dashboard</p>
           </div>
         </div>
         
         <div className="flex items-center space-x-4">
+          {/* Project Management Authentication */}
+          {!isLinearAuthenticated && !isJiraAuthenticated && (
+            <div className="flex items-center space-x-2">
+              <select
+                value={projectProvider}
+                onChange={(e) => setProjectProvider(e.target.value)}
+                className="bg-gray-700 border border-gray-600 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                <option value={PROJECT_PROVIDERS.LINEAR}>Linear</option>
+                <option value={PROJECT_PROVIDERS.JIRA}>JIRA</option>
+              </select>
+            </div>
+          )}
+
           {/* Linear Authentication */}
           {isLinearAuthenticated ? (
             <div className="flex items-center space-x-2">
               <div className="flex items-center space-x-2 bg-gray-700 px-3 py-1 rounded-lg">
                 <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                 <span className="text-sm text-white">{linearUser?.displayName || linearUser?.name}</span>
+                <span className="text-xs text-gray-400">Linear</span>
                 <button
                   onClick={logoutLinear}
                   className="text-gray-400 hover:text-white text-xs"
@@ -39,12 +60,36 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                 </button>
               </div>
             </div>
-          ) : (
+          ) : projectProvider === PROJECT_PROVIDERS.LINEAR && (
             <button
               onClick={loginLinear}
               className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors"
             >
               Connect Linear
+            </button>
+          )}
+
+          {/* JIRA Authentication */}
+          {isJiraAuthenticated ? (
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 bg-gray-700 px-3 py-1 rounded-lg">
+                <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                <span className="text-sm text-white">{jiraUser?.displayName}</span>
+                <span className="text-xs text-gray-400">JIRA</span>
+                <button
+                  onClick={logoutJira}
+                  className="text-gray-400 hover:text-white text-xs"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          ) : projectProvider === PROJECT_PROVIDERS.JIRA && (
+            <button
+              onClick={loginJira}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors"
+            >
+              Connect JIRA
             </button>
           )}
 

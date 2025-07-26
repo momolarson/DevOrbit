@@ -80,11 +80,11 @@ export default function Sidebar({ isOpen, onViewChange }) {
       ]
     },
     {
-      category: 'Linear',
+      category: 'Projects',
       tips: [
-        'Connect Linear to analyze story points vs performance',
-        'Track velocity and estimate accuracy',
-        'Optimize workload distribution across team'
+        'Connect Linear or JIRA to analyze story points vs performance',
+        'Track velocity and estimate accuracy across sprints',
+        'Optimize workload distribution and team capacity'
       ]
     }
   ]

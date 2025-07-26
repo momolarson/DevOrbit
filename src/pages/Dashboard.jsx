@@ -12,6 +12,7 @@ import CommentsDashboard from '../components/dashboards/CommentsDashboard'
 import CodeDashboard from '../components/dashboards/CodeDashboard'
 import TeamDashboard from '../components/dashboards/TeamDashboard'
 import LinearDashboard from '../components/dashboards/LinearDashboard'
+import UnifiedProjectDashboard from '../components/dashboards/UnifiedProjectDashboard'
 
 export default function Dashboard({ currentView = 'overview', onViewChange }) {
   const { isAuthenticated, provider, gitProvider, token } = useAuth()
@@ -104,7 +105,9 @@ export default function Dashboard({ currentView = 'overview', onViewChange }) {
       case 'team':
         return <TeamDashboard repository={selectedRepo} onBack={handleBackToOverview} />
       case 'linear':
-        return <LinearDashboard onBack={handleBackToOverview} />
+        return <UnifiedProjectDashboard repository={selectedRepo} onBack={handleBackToOverview} />
+      case 'projects':
+        return <UnifiedProjectDashboard repository={selectedRepo} onBack={handleBackToOverview} />
       default:
         if (onViewChange) {
           onViewChange('overview')

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
 import { createProvider, PROVIDERS } from '../services/gitProviders'
+import { createProjectProvider, PROJECT_PROVIDERS } from '../services/projectProviders'
 
 const AuthContext = createContext()
 
@@ -17,8 +18,13 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(null)
   const [provider, setProvider] = useState(PROVIDERS.GITHUB)
   const [gitProvider, setGitProvider] = useState(null)
+  const [projectProvider, setProjectProvider] = useState(PROJECT_PROVIDERS.LINEAR)
+  const [projectProviderInstance, setProjectProviderInstance] = useState(null)
   const [linearToken, setLinearToken] = useState(null)
   const [linearUser, setLinearUser] = useState(null)
+  const [jiraToken, setJiraToken] = useState(null)
+  const [jiraUser, setJiraUser] = useState(null)
+  const [jiraDomain, setJiraDomain] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -47,6 +53,20 @@ export function AuthProvider({ children }) {
     if (storedLinearToken && storedLinearUser) {
       setLinearToken(storedLinearToken)
       setLinearUser(JSON.parse(storedLinearUser))
+    }
+    
+    // Check for JIRA credentials
+    const storedJiraToken = localStorage.getItem('jira_token')
+    const storedJiraUser = localStorage.getItem('jira_user')
+    const storedJiraDomain = localStorage.getItem('jira_domain')
+    const storedProjectProvider = localStorage.getItem('project_provider') || PROJECT_PROVIDERS.LINEAR
+    
+    setProjectProvider(storedProjectProvider)
+    
+    if (storedJiraToken && storedJiraUser && storedJiraDomain) {
+      setJiraToken(storedJiraToken)
+      setJiraUser(JSON.parse(storedJiraUser))
+      setJiraDomain(storedJiraDomain)
     }
     
     setLoading(false)
@@ -213,6 +233,79 @@ export function AuthProvider({ children }) {
     toast.info('Disconnected from Linear')
   }
 
+  const loginJira = () => {
+    const domain = prompt(
+      'Enter your JIRA domain (without .atlassian.net):\n\n' +
+      'Example: if your JIRA is at mycompany.atlassian.net, enter "mycompany"'
+    )
+    
+    if (!domain) return
+    
+    const email = prompt(
+      'Enter your JIRA email address:\n\n' +
+      'This is the email you use to log into JIRA.'
+    )
+    
+    if (!email) return
+    
+    const apiToken = prompt(
+      'Enter your JIRA API Token:\n\n' +
+      '1. Go to https://id.atlassian.com/manage-profile/security/api-tokens\n' +
+      '2. Create a new API token\n' +
+      '3. Paste it here:'
+    )
+    
+    if (apiToken) {
+      setJiraToken(apiToken)
+      setJiraDomain(domain)
+      setProjectProvider(PROJECT_PROVIDERS.JIRA)
+      localStorage.setItem('jira_token', apiToken)
+      localStorage.setItem('jira_domain', domain)
+      localStorage.setItem('jira_email', email)
+      localStorage.setItem('project_provider', PROJECT_PROVIDERS.JIRA)
+      
+      // Create provider instance and fetch user info
+      const providerInstance = createProjectProvider(PROJECT_PROVIDERS.JIRA, apiToken, domain, email)
+      setProjectProviderInstance(providerInstance)
+      fetchJiraUserInfo(providerInstance)
+    }
+  }
+
+  const fetchJiraUserInfo = async (providerInstance) => {
+    try {
+      const userData = await providerInstance.fetchUser()
+      setJiraUser(userData)
+      localStorage.setItem('jira_user', JSON.stringify(userData))
+      toast.success(`Welcome, ${userData.displayName}! Connected to JIRA`)
+    } catch (error) {
+      console.error('JIRA authentication error:', error)
+      
+      if (error.message.includes('CORS_ERROR')) {
+        toast.error(
+          'JIRA connection blocked by CORS policy. Please install a CORS browser extension like "CORS Unblock" to use JIRA integration in development.',
+          { autoClose: 8000 }
+        )
+      } else {
+        toast.error('Failed to authenticate with JIRA. Please check your credentials.')
+      }
+      
+      logoutJira()
+    }
+  }
+
+  const logoutJira = () => {
+    setJiraUser(null)
+    setJiraToken(null)
+    setJiraDomain(null)
+    setProjectProviderInstance(null)
+    localStorage.removeItem('jira_token')
+    localStorage.removeItem('jira_user')
+    localStorage.removeItem('jira_domain')
+    localStorage.removeItem('jira_email')
+    localStorage.removeItem('project_provider')
+    toast.info('Disconnected from JIRA')
+  }
+
   const logout = () => {
     setUser(null)
     setToken(null)
@@ -229,16 +322,26 @@ export function AuthProvider({ children }) {
     token,
     provider,
     gitProvider,
+    projectProvider,
+    projectProviderInstance,
     linearUser,
     linearToken,
+    jiraUser,
+    jiraToken,
+    jiraDomain,
     loading,
     login,
     loginLinear,
+    loginJira,
     logout,
     logoutLinear,
+    logoutJira,
     setProvider,
+    setProjectProvider,
     isAuthenticated: !!token,
-    isLinearAuthenticated: !!linearToken
+    isLinearAuthenticated: !!linearToken,
+    isJiraAuthenticated: !!jiraToken,
+    isProjectAuthenticated: !!linearToken || !!jiraToken
   }
 
   return (

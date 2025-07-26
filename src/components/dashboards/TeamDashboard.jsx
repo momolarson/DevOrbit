@@ -3,7 +3,7 @@ import { Bar, Doughnut } from 'react-chartjs-2'
 import { useAuth } from '../../hooks/useAuth'
 
 export default function TeamDashboard({ repository, onBack }) {
-  const { token } = useAuth()
+  const { gitProvider } = useAuth()
   const [loading, setLoading] = useState(true)
   const [teamData, setTeamData] = useState({
     members: {},
@@ -14,73 +14,65 @@ export default function TeamDashboard({ repository, onBack }) {
   })
 
   useEffect(() => {
-    if (repository && token) {
+    if (repository && gitProvider) {
       fetchDetailedTeamData()
     }
-  }, [repository, token])
+  }, [repository, gitProvider])
 
   const fetchDetailedTeamData = async () => {
     setLoading(true)
     
     try {
-      // Fetch contributors
-      const contributorsResponse = await fetch(
-        `https://api.github.com/repos/${repository.owner.login}/${repository.name}/contributors?per_page=50`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
+      console.log('Fetching team data using provider:', gitProvider.name)
+      
+      // Note: Contributors data would need a separate provider method
+      // For now, we'll extract contributors from commit and PR data
+      const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString() // Last 90 days
+      const [commits, pullRequests] = await Promise.all([
+        gitProvider.fetchCommits(repository, since, 100),
+        gitProvider.fetchPullRequests(repository, 'all', 100)
+      ])
+      
+      console.log('Fetched commits and PRs for team analysis:', commits.length, pullRequests.length)
+      
+      // Extract contributors from commits and PRs
+      const contributors = new Map()
+      
+      // Add commit authors as contributors
+      commits.forEach(commit => {
+        const author = commit.author?.name || 'Unknown'
+        if (!contributors.has(author)) {
+          contributors.set(author, {
+            login: author,
+            contributions: 0,
+            type: 'User'
+          })
         }
-      )
-
-      let contributors = []
-      if (contributorsResponse.ok) {
-        contributors = await contributorsResponse.json()
-      }
-
-      // Fetch pull requests for collaboration analysis
-      const prsResponse = await fetch(
-        `https://api.github.com/repos/${repository.owner.login}/${repository.name}/pulls?state=all&per_page=100`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
+        contributors.get(author).contributions++
+      })
+      
+      // Add PR authors as contributors
+      pullRequests.forEach(pr => {
+        const author = pr.author?.username || 'Unknown'
+        if (!contributors.has(author)) {
+          contributors.set(author, {
+            login: author,
+            contributions: 0,
+            type: 'User'
+          })
         }
-      )
+        contributors.get(author).contributions++
+      })
+      
+      const contributorsList = Array.from(contributors.values())
+      
+      // Create mock detailed PRs with basic review data
+      const detailedPRs = pullRequests.slice(0, 30).map(pr => ({
+        ...pr,
+        reviews: [] // Reviews would need additional provider methods
+      }))
 
-      let prs = []
-      if (prsResponse.ok) {
-        prs = await prsResponse.json()
-      }
-
-      // Fetch detailed PR data with reviews
-      const detailedPRs = []
-      for (const pr of prs.slice(0, 30)) {
-        try {
-          const reviewsResponse = await fetch(
-            `https://api.github.com/repos/${repository.owner.login}/${repository.name}/pulls/${pr.number}/reviews`,
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/vnd.github.v3+json'
-              }
-            }
-          )
-          
-          let reviews = []
-          if (reviewsResponse.ok) {
-            reviews = await reviewsResponse.json()
-          }
-
-          detailedPRs.push({ ...pr, reviews })
-        } catch (error) {
-          console.error(`Error fetching reviews for PR ${pr.number}:`, error)
-        }
-      }
-
-      processTeamAnalytics(contributors, detailedPRs)
+      processTeamAnalytics(contributorsList, detailedPRs)
     } catch (error) {
       console.error('Error fetching detailed team data:', error)
     } finally {

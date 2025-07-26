@@ -1,12 +1,12 @@
 // AI-powered story point estimator based on user performance patterns
-// Uses GitHub commits and Linear issue data to suggest Fibonacci estimates
+// Uses Git commits (GitHub/Bitbucket) and Linear issue data to suggest Fibonacci estimates
 
 const FIBONACCI_SEQUENCE = [1, 2, 3, 5, 8, 13, 21, 34];
 
 class StoryPointEstimator {
-  constructor(linearData, githubData, userPerformance) {
+  constructor(linearData, gitData, userPerformance) {
     this.linearData = linearData;
-    this.githubData = githubData;
+    this.gitData = gitData;
     this.userPerformance = userPerformance;
     this.personalVelocity = this.calculatePersonalVelocity();
   }
