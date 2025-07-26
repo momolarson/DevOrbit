@@ -2,81 +2,57 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 
 export default function CommentAnalysis({ repository }) {
-  const { token } = useAuth()
+  const { gitProvider } = useAuth()
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
   const [sortField, setSortField] = useState('created_at')
   const [sortDirection, setSortDirection] = useState('desc')
 
   useEffect(() => {
-    if (repository && token) {
+    if (repository && gitProvider) {
       fetchCommentData()
     }
-  }, [repository, token])
+  }, [repository, gitProvider])
 
   const fetchCommentData = async () => {
     setLoading(true)
     setComments([])
     
     try {
-      // Fetch recent pull requests
-      const prsUrl = `https://api.github.com/repos/${repository.owner.login}/${repository.name}/pulls?state=all&per_page=20`
-      console.log('Fetching PRs for comments from:', prsUrl)
+      // Fetch recent pull requests using provider abstraction
+      console.log('Fetching PRs for comments using provider:', gitProvider.name)
       
-      const prsResponse = await fetch(prsUrl, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      })
-
-      console.log('PRs response status:', prsResponse.status)
-
-      if (prsResponse.ok) {
-        const prs = await prsResponse.json()
-        console.log('Fetched PRs:', prs.length)
-        
-        // Fetch comments for each PR
-        const allComments = []
-        for (const pr of prs.slice(0, 5)) { // Limit to avoid rate limits
-          try {
-            const commentsUrl = `https://api.github.com/repos/${repository.owner.login}/${repository.name}/issues/${pr.number}/comments`
-            console.log(`Fetching comments for PR ${pr.number}`)
-            
-            const commentsResponse = await fetch(commentsUrl, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/vnd.github.v3+json'
-              }
+      const pullRequests = await gitProvider.fetchPullRequests(repository, 'all', 20)
+      console.log('Fetched PRs for comment analysis:', pullRequests.length)
+      
+      // Fetch comments for each PR using provider abstraction
+      const allComments = []
+      for (const pr of pullRequests.slice(0, 5)) { // Limit to avoid rate limits
+        try {
+          console.log(`Fetching comments for PR ${pr.number}`)
+          
+          // Use provider abstraction to fetch comments
+          const prComments = await gitProvider.fetchPullRequestComments(repository, pr.number)
+          console.log(`PR ${pr.number} has ${prComments.length} comments`)
+          
+          prComments.forEach(comment => {
+            allComments.push({
+              id: comment.id,
+              prNumber: pr.number,
+              prTitle: pr.title,
+              body: comment.body,
+              author: comment.author?.username || comment.author?.login || 'Unknown',
+              created_at: comment.createdAt,
+              responseTime: calculateResponseTime(comment.createdAt, pr.createdAt)
             })
-            
-            if (commentsResponse.ok) {
-              const prComments = await commentsResponse.json()
-              console.log(`PR ${pr.number} has ${prComments.length} comments`)
-              
-              prComments.forEach(comment => {
-                allComments.push({
-                  id: comment.id,
-                  prNumber: pr.number,
-                  prTitle: pr.title,
-                  body: comment.body,
-                  author: comment.user.login,
-                  created_at: comment.created_at,
-                  responseTime: calculateResponseTime(comment.created_at, pr.created_at)
-                })
-              })
-            }
-          } catch (error) {
-            console.error(`Error fetching comments for PR ${pr.number}:`, error)
-          }
+          })
+        } catch (error) {
+          console.error(`Error fetching comments for PR ${pr.number}:`, error)
         }
-        
-        console.log('Total comments collected:', allComments.length)
-        setComments(allComments)
-      } else {
-        const errorText = await prsResponse.text()
-        console.error('PR API Error:', prsResponse.status, errorText)
       }
+      
+      console.log('Total comments collected:', allComments.length)
+      setComments(allComments)
     } catch (error) {
       console.error('Error fetching comment data:', error)
     } finally {

@@ -14,6 +14,14 @@ export default defineConfig({
         headers: {
           'User-Agent': 'DevOrbit/1.0'
         }
+      },
+      '/api/jira': {
+        target: 'https://guitartabcreator.atlassian.net',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/jira/, '/rest/api/3'),
+        headers: {
+          'User-Agent': 'DevOrbit/1.0'
+        }
       }
     }
   }

@@ -1,12 +1,12 @@
 // AI-powered story point estimator based on user performance patterns
-// Uses GitHub commits and Linear issue data to suggest Fibonacci estimates
+// Uses Git commits (GitHub/Bitbucket) and Linear issue data to suggest Fibonacci estimates
 
 const FIBONACCI_SEQUENCE = [1, 2, 3, 5, 8, 13, 21, 34];
 
 class StoryPointEstimator {
-  constructor(linearData, githubData, userPerformance) {
+  constructor(linearData, gitData, userPerformance) {
     this.linearData = linearData;
-    this.githubData = githubData;
+    this.gitData = gitData;
     this.userPerformance = userPerformance;
     this.personalVelocity = this.calculatePersonalVelocity();
   }
@@ -170,7 +170,7 @@ class StoryPointEstimator {
   }
 
   // Analyze team context
-  analyzeTeamContext(team) {
+  analyzeTeamContext() {
     // Different teams might have different complexity patterns
     // This would be enhanced with team-specific data
     return 1.0;
@@ -222,7 +222,7 @@ class StoryPointEstimator {
   }
 
   // Adjust estimate based on personal velocity and preferences
-  adjustForPersonalVelocity(baseEstimate, analysis) {
+  adjustForPersonalVelocity(baseEstimate) {
     let adjusted = baseEstimate;
 
     // Adjust based on complexity preference
@@ -264,8 +264,8 @@ class StoryPointEstimator {
     return Math.min(0.95, Math.max(0.1, confidence));
   }
 
-  // Generate human-readable reasoning
-  generateReasoning(analysis, baseEstimate, finalEstimate) {
+  // Generate human-readable reasoning  
+  generateReasoning(analysis) {
     const reasons = [];
 
     if (analysis.textComplexity > 1.5) {

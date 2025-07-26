@@ -3,7 +3,7 @@ import { Line, Bar, Doughnut } from 'react-chartjs-2'
 import { useAuth } from '../../hooks/useAuth'
 
 export default function CommitsDashboard({ repository, onBack }) {
-  const { token } = useAuth()
+  const { gitProvider } = useAuth()
   const [loading, setLoading] = useState(true)
   const [commitData, setCommitData] = useState({
     commits: [],
@@ -14,59 +14,34 @@ export default function CommitsDashboard({ repository, onBack }) {
   const [timeRange, setTimeRange] = useState(90)
 
   useEffect(() => {
-    if (repository && token) {
+    if (repository && gitProvider) {
       fetchDetailedCommitData()
+    } else {
+      // Reset data when no repository is selected
+      setCommitData({
+        commits: [],
+        stats: {},
+        patterns: {},
+        recommendations: []
+      })
+      setLoading(false)
     }
-  }, [repository, token, timeRange])
+  }, [repository, gitProvider, timeRange])
 
   const fetchDetailedCommitData = async () => {
     setLoading(true)
     
     try {
       const daysAgo = new Date(Date.now() - timeRange * 24 * 60 * 60 * 1000).toISOString()
-      const url = `https://api.github.com/repos/${repository.owner.login}/${repository.name}/commits?since=${daysAgo}&per_page=100`
       
-      console.log('Fetching detailed commit data from:', url)
+      console.log('Fetching detailed commit data...')
       
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      })
-
-      if (response.ok) {
-        const commits = await response.json()
-        console.log('Detailed commits fetched:', commits.length)
-        
-        // Fetch additional stats for each commit
-        const enrichedCommits = await Promise.all(
-          commits.slice(0, 20).map(async (commit) => {
-            try {
-              const statsResponse = await fetch(commit.url, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Accept': 'application/vnd.github.v3+json'
-                }
-              })
-              
-              if (statsResponse.ok) {
-                const detailedCommit = await statsResponse.json()
-                return {
-                  ...commit,
-                  stats: detailedCommit.stats,
-                  files: detailedCommit.files
-                }
-              }
-            } catch (error) {
-              console.log('Failed to fetch stats for commit:', commit.sha)
-            }
-            return commit
-          })
-        )
-        
-        processCommitAnalytics(enrichedCommits)
-      }
+      const commits = await gitProvider.fetchCommits(repository, daysAgo, 100)
+      console.log('Detailed commits fetched:', commits.length)
+      
+      // For now, we'll use the commits as-is since enriching with stats requires additional API calls
+      // This can be enhanced later to fetch detailed stats for each commit
+      processCommitAnalytics(commits)
     } catch (error) {
       console.error('Error fetching detailed commit data:', error)
     } finally {
@@ -83,7 +58,7 @@ export default function CommitsDashboard({ repository, onBack }) {
     const messageTypes = { feat: 0, fix: 0, docs: 0, style: 0, refactor: 0, test: 0, other: 0 }
 
     commits.forEach(commit => {
-      const date = new Date(commit.commit.author.date)
+      const date = new Date(commit.author.date)
       const hour = date.getHours()
       const day = date.getDay()
       
@@ -91,7 +66,7 @@ export default function CommitsDashboard({ repository, onBack }) {
       dailyPattern[day]++
       
       // Author analysis
-      const author = commit.commit.author.name
+      const author = commit.author.name
       if (!authors[author]) {
         authors[author] = { commits: 0, additions: 0, deletions: 0, files: 0 }
       }
@@ -110,7 +85,7 @@ export default function CommitsDashboard({ repository, onBack }) {
       }
       
       // Message type analysis
-      const message = commit.commit.message.toLowerCase()
+      const message = commit.message.toLowerCase()
       if (message.startsWith('feat')) messageTypes.feat++
       else if (message.startsWith('fix')) messageTypes.fix++
       else if (message.startsWith('docs')) messageTypes.docs++

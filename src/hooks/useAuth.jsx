@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
+import { createProvider, PROVIDERS } from '../services/gitProviders'
+import { createProjectProvider, PROJECT_PROVIDERS } from '../services/projectProviders'
 
 const AuthContext = createContext()
 
@@ -14,20 +16,38 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(null)
+  const [provider, setProvider] = useState(PROVIDERS.GITHUB)
+  const [gitProvider, setGitProvider] = useState(null)
+  const [projectProvider, setProjectProvider] = useState(PROJECT_PROVIDERS.LINEAR)
+  const [projectProviderInstance, setProjectProviderInstance] = useState(null)
   const [linearToken, setLinearToken] = useState(null)
   const [linearUser, setLinearUser] = useState(null)
+  const [jiraToken, setJiraToken] = useState(null)
+  const [jiraUser, setJiraUser] = useState(null)
+  const [jiraDomain, setJiraDomain] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // Check for stored tokens on app load
-    const storedToken = localStorage.getItem('github_token')
-    const storedUser = localStorage.getItem('github_user')
+    const storedProvider = localStorage.getItem('git_provider') || PROVIDERS.GITHUB
+    const storedToken = localStorage.getItem(`${storedProvider}_token`)
+    const storedUser = localStorage.getItem(`${storedProvider}_user`)
+    const storedUsername = localStorage.getItem(`${storedProvider}_username`)
     const storedLinearToken = localStorage.getItem('linear_token')
     const storedLinearUser = localStorage.getItem('linear_user')
+    
+    setProvider(storedProvider)
     
     if (storedToken && storedUser) {
       setToken(storedToken)
       setUser(JSON.parse(storedUser))
+      
+      // Create provider instance with username if it's Bitbucket
+      const providerInstance = storedProvider === PROVIDERS.BITBUCKET 
+        ? createProvider(storedProvider, storedToken, storedUsername)
+        : createProvider(storedProvider, storedToken)
+      
+      setGitProvider(providerInstance)
     }
     
     if (storedLinearToken && storedLinearUser) {
@@ -35,46 +55,85 @@ export function AuthProvider({ children }) {
       setLinearUser(JSON.parse(storedLinearUser))
     }
     
+    // Check for JIRA credentials
+    const storedJiraToken = localStorage.getItem('jira_token')
+    const storedJiraUser = localStorage.getItem('jira_user')
+    const storedJiraDomain = localStorage.getItem('jira_domain')
+    const storedProjectProvider = localStorage.getItem('project_provider') || PROJECT_PROVIDERS.LINEAR
+    
+    setProjectProvider(storedProjectProvider)
+    
+    if (storedJiraToken && storedJiraUser && storedJiraDomain) {
+      setJiraToken(storedJiraToken)
+      setJiraUser(JSON.parse(storedJiraUser))
+      setJiraDomain(storedJiraDomain)
+    }
+    
     setLoading(false)
   }, [])
 
-  const login = () => {
-    // For demo purposes, we'll use personal access token flow
-    const personalToken = prompt(
-      'For development, please enter your GitHub Personal Access Token with repo and user scopes:\n\n' +
-      '1. Go to GitHub Settings > Developer settings > Personal access tokens\n' +
-      '2. Generate a new token with "repo" and "user" scopes\n' +
-      '3. Paste it here:'
-    )
-    
-    if (personalToken) {
-      setToken(personalToken)
-      localStorage.setItem('github_token', personalToken)
+  const login = (selectedProvider = provider) => {
+    if (selectedProvider === PROVIDERS.BITBUCKET) {
+      // For Bitbucket, we need both username and app password
+      const username = prompt(
+        'Enter your Bitbucket username:\n\n' +
+        'This is your Bitbucket account username (not email).'
+      )
       
-      // Fetch user info to validate token
-      fetchUserInfo(personalToken)
+      if (!username) return
+      
+      const appPassword = prompt(
+        'Enter your Bitbucket App Password:\n\n' +
+        '1. Go to Bitbucket Settings > App passwords\n' +
+        '2. Create a new app password with "Repositories: Read" and "Account: Read" permissions\n' +
+        '3. Paste it here:'
+      )
+      
+      if (appPassword) {
+        setProvider(selectedProvider)
+        setToken(appPassword)
+        localStorage.setItem('git_provider', selectedProvider)
+        localStorage.setItem(`${selectedProvider}_token`, appPassword)
+        localStorage.setItem(`${selectedProvider}_username`, username)
+        
+        // Create provider instance with username and fetch user info
+        const providerInstance = createProvider(selectedProvider, appPassword, username)
+        setGitProvider(providerInstance)
+        fetchUserInfo(providerInstance)
+      }
+    } else {
+      // GitHub flow
+      const instructions = 'For development, please enter your GitHub Personal Access Token with repo and user scopes:\n\n' +
+        '1. Go to GitHub Settings > Developer settings > Personal access tokens\n' +
+        '2. Generate a new token with "repo" and "user" scopes\n' +
+        '3. Paste it here:'
+      
+      const personalToken = prompt(instructions)
+      
+      if (personalToken) {
+        setProvider(selectedProvider)
+        setToken(personalToken)
+        localStorage.setItem('git_provider', selectedProvider)
+        localStorage.setItem(`${selectedProvider}_token`, personalToken)
+        
+        // Create provider instance and fetch user info
+        const providerInstance = createProvider(selectedProvider, personalToken)
+        setGitProvider(providerInstance)
+        fetchUserInfo(providerInstance)
+      }
     }
   }
 
-  const fetchUserInfo = async (authToken) => {
+  const fetchUserInfo = async (providerInstance) => {
     try {
-      const response = await fetch('https://api.github.com/user', {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      })
-      
-      if (response.ok) {
-        const userData = await response.json()
-        setUser(userData)
-        localStorage.setItem('github_user', JSON.stringify(userData))
-        toast.success(`Welcome, ${userData.login}!`)
-      } else {
-        throw new Error('Invalid token')
-      }
+      const userData = await providerInstance.fetchUser()
+      setUser(userData)
+      localStorage.setItem(`${provider}_user`, JSON.stringify(userData))
+      const providerName = provider === PROVIDERS.GITHUB ? 'GitHub' : 'Bitbucket'
+      toast.success(`Welcome, ${userData.username}! Connected to ${providerName}`)
     } catch (error) {
-      toast.error('Failed to authenticate with GitHub')
+      const providerName = provider === PROVIDERS.GITHUB ? 'GitHub' : 'Bitbucket'
+      toast.error(`Failed to authenticate with ${providerName}`)
       logout()
     }
   }
@@ -172,26 +231,115 @@ export function AuthProvider({ children }) {
     toast.info('Disconnected from Linear')
   }
 
+  const loginJira = () => {
+    const domain = prompt(
+      'Enter your JIRA domain (without .atlassian.net):\n\n' +
+      'Example: if your JIRA is at mycompany.atlassian.net, enter "mycompany"'
+    )
+    
+    if (!domain) return
+    
+    const email = prompt(
+      'Enter your JIRA email address:\n\n' +
+      'This is the email you use to log into JIRA.'
+    )
+    
+    if (!email) return
+    
+    const apiToken = prompt(
+      'Enter your JIRA API Token:\n\n' +
+      '1. Go to https://id.atlassian.com/manage-profile/security/api-tokens\n' +
+      '2. Create a new API token\n' +
+      '3. Paste it here:'
+    )
+    
+    if (apiToken) {
+      setJiraToken(apiToken)
+      setJiraDomain(domain)
+      setProjectProvider(PROJECT_PROVIDERS.JIRA)
+      localStorage.setItem('jira_token', apiToken)
+      localStorage.setItem('jira_domain', domain)
+      localStorage.setItem('jira_email', email)
+      localStorage.setItem('project_provider', PROJECT_PROVIDERS.JIRA)
+      
+      // Create provider instance and fetch user info
+      const providerInstance = createProjectProvider(PROJECT_PROVIDERS.JIRA, apiToken, domain, email)
+      setProjectProviderInstance(providerInstance)
+      fetchJiraUserInfo(providerInstance)
+    }
+  }
+
+  const fetchJiraUserInfo = async (providerInstance) => {
+    try {
+      const userData = await providerInstance.fetchUser()
+      setJiraUser(userData)
+      localStorage.setItem('jira_user', JSON.stringify(userData))
+      toast.success(`Welcome, ${userData.displayName}! Connected to JIRA`)
+    } catch (error) {
+      console.error('JIRA authentication error:', error)
+      
+      if (error.message.includes('CORS_ERROR')) {
+        toast.error(
+          'JIRA connection blocked by CORS policy. Please install a CORS browser extension like "CORS Unblock" to use JIRA integration in development.',
+          { autoClose: 8000 }
+        )
+      } else {
+        toast.error('Failed to authenticate with JIRA. Please check your credentials.')
+      }
+      
+      logoutJira()
+    }
+  }
+
+  const logoutJira = () => {
+    setJiraUser(null)
+    setJiraToken(null)
+    setJiraDomain(null)
+    setProjectProviderInstance(null)
+    localStorage.removeItem('jira_token')
+    localStorage.removeItem('jira_user')
+    localStorage.removeItem('jira_domain')
+    localStorage.removeItem('jira_email')
+    localStorage.removeItem('project_provider')
+    toast.info('Disconnected from JIRA')
+  }
+
   const logout = () => {
     setUser(null)
     setToken(null)
-    localStorage.removeItem('github_token')
-    localStorage.removeItem('github_user')
+    setGitProvider(null)
+    localStorage.removeItem(`${provider}_token`)
+    localStorage.removeItem(`${provider}_user`)
+    localStorage.removeItem(`${provider}_username`)
+    localStorage.removeItem('git_provider')
     toast.info('Logged out successfully')
   }
 
   const value = {
     user,
     token,
+    provider,
+    gitProvider,
+    projectProvider,
+    projectProviderInstance,
     linearUser,
     linearToken,
+    jiraUser,
+    jiraToken,
+    jiraDomain,
     loading,
     login,
     loginLinear,
+    loginJira,
     logout,
     logoutLinear,
+    logoutJira,
+    setProvider,
+    setProjectProvider,
     isAuthenticated: !!token,
-    isLinearAuthenticated: !!linearToken
+    isLinearAuthenticated: !!linearToken,
+    isJiraAuthenticated: !!jiraToken,
+    isProjectAuthenticated: !!linearToken || !!jiraToken
   }
 
   return (

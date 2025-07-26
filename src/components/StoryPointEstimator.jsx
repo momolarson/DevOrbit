@@ -2,10 +2,15 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import LinearAPI from '../utils/linearApi'
 import StoryPointEstimator from '../utils/storyPointEstimator'
+import { createProjectProvider, PROJECT_PROVIDERS } from '../services/projectProviders'
 import { toast } from 'react-toastify'
 
 export default function StoryPointEstimatorComponent({ repository }) {
-  const { linearToken, isLinearAuthenticated, token, user } = useAuth()
+  const { 
+    linearToken, isLinearAuthenticated, 
+    jiraToken, isJiraAuthenticated, jiraDomain,
+    projectProvider, gitProvider, user 
+  } = useAuth()
   const [data, setData] = useState({
     issues: [],
     estimates: [],
@@ -13,43 +18,67 @@ export default function StoryPointEstimatorComponent({ repository }) {
     loading: false
   })
   const [selectedIssue, setSelectedIssue] = useState(null)
-  const [estimatorInstance, setEstimatorInstance] = useState(null)
 
   useEffect(() => {
-    if (isLinearAuthenticated && linearToken && token && repository) {
+    const isProjectAuthenticated = (isLinearAuthenticated && linearToken) || (isJiraAuthenticated && jiraToken)
+    if (isProjectAuthenticated && gitProvider && repository) {
       fetchDataAndEstimate()
     }
-  }, [isLinearAuthenticated, linearToken, token, repository])
+  }, [isLinearAuthenticated, linearToken, isJiraAuthenticated, jiraToken, gitProvider, repository])
 
   const fetchDataAndEstimate = async () => {
     setData(prev => ({ ...prev, loading: true }))
     
     try {
-      const api = new LinearAPI(linearToken)
-      
-      // Try to fetch issues with error handling
+      let providerInstance
       let allIssues = []
+      
+      // Create the appropriate project provider
+      if (isLinearAuthenticated && projectProvider === PROJECT_PROVIDERS.LINEAR) {
+        providerInstance = createProjectProvider(PROJECT_PROVIDERS.LINEAR, linearToken)
+      } else if (isJiraAuthenticated && projectProvider === PROJECT_PROVIDERS.JIRA) {
+        const jiraEmail = localStorage.getItem('jira_email')
+        providerInstance = createProjectProvider(PROJECT_PROVIDERS.JIRA, jiraToken, jiraDomain, jiraEmail)
+      } else {
+        throw new Error('No authenticated project provider available')
+      }
+      
+      // Fetch issues using the provider
       try {
-        allIssues = await api.getIssues({ limit: 50 })
+        allIssues = await providerInstance.fetchIssues({ limit: 50 })
+        console.log(`Fetched ${allIssues.length} issues from ${projectProvider}`)
       } catch (networkError) {
-        console.warn('Linear API network error, using demo data:', networkError)
-        // Use demo data for testing
+        console.warn(`${projectProvider} API network error, using demo data:`, networkError)
         allIssues = generateDemoIssues()
-        toast.warning('Using demo data - Linear API connection failed')
+        toast.warning(`Using demo data - ${projectProvider} API connection failed`)
       }
 
+      // Filter for unestimated issues (both Linear and JIRA support story points)
       const unestimatedIssues = allIssues.filter(issue => 
-        !issue.estimate || issue.estimate === 0
+        !issue.storyPoints || issue.storyPoints === 0 || !issue.estimate || issue.estimate === 0
       )
 
-      // Get user's performance data (with fallback)
+      // Get user's performance data (fallback for both providers)
       let userPerformance = {
-        userId: user?.id,
+        userId: user?.id || user?.accountId,
       }
       
       try {
-        const perfData = await getUserPerformanceData(api)
-        userPerformance = { ...userPerformance, ...perfData }
+        // Use legacy Linear API method if available, otherwise use fallback
+        if (projectProvider === PROJECT_PROVIDERS.LINEAR) {
+          const api = new LinearAPI(linearToken)
+          const perfData = await getUserPerformanceData(api)
+          userPerformance = { ...userPerformance, ...perfData }
+        } else {
+          // For JIRA, use default performance metrics
+          userPerformance = {
+            ...userPerformance,
+            completedCount: 5,
+            totalEstimate: 15,
+            avgTimeToComplete: 2.5,
+            estimateAccuracy: 75
+          }
+        }
       } catch (error) {
         console.warn('Using default performance data:', error)
         userPerformance = {
@@ -61,17 +90,15 @@ export default function StoryPointEstimatorComponent({ repository }) {
         }
       }
 
-      // Fetch GitHub data for correlation
-      const githubData = await fetchGitHubData()
+      // Fetch Git data for correlation using provider abstraction
+      const gitData = await fetchGitData()
 
       // Create estimator instance
       const estimator = new StoryPointEstimator(
         { issues: allIssues },
-        githubData,
+        gitData,
         userPerformance
       )
-
-      setEstimatorInstance(estimator)
 
       // Generate estimates for unestimated issues
       const estimates = estimator.estimateMultipleIssues(unestimatedIssues)
@@ -157,29 +184,36 @@ export default function StoryPointEstimatorComponent({ repository }) {
     }
   }
 
-  const fetchGitHubData = async () => {
-    if (!repository || !token) return {}
+  const fetchGitData = async () => {
+    if (!repository || !gitProvider) return {}
 
     try {
+      console.log('Fetching git data for story point estimation using provider:', gitProvider.name)
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-      const commitsUrl = `https://api.github.com/repos/${repository.owner.login}/${repository.name}/commits?since=${thirtyDaysAgo}&author=${user?.login}&per_page=100`
       
-      const response = await fetch(commitsUrl, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
+      // Fetch commits from the last 30 days using provider abstraction
+      const commits = await gitProvider.fetchCommits(repository, thirtyDaysAgo, 100)
+      
+      // Filter commits by current user if available
+      const userCommits = commits.filter(commit => {
+        const commitAuthor = commit.author?.name || commit.author?.email
+        const currentUser = user?.username || user?.login || user?.name || user?.email
+        return commitAuthor && currentUser && (
+          commitAuthor.toLowerCase().includes(currentUser.toLowerCase()) ||
+          currentUser.toLowerCase().includes(commitAuthor.toLowerCase())
+        )
       })
-
-      if (response.ok) {
-        const commits = await response.json()
-        return { commits }
+      
+      console.log(`Found ${userCommits.length} commits by current user out of ${commits.length} total commits`)
+      
+      return { 
+        commits: userCommits.length > 0 ? userCommits : commits.slice(0, 20), // Fallback to recent commits
+        provider: gitProvider.name 
       }
     } catch (error) {
-      console.error('Error fetching GitHub data:', error)
+      console.error('Error fetching git data:', error)
+      return {}
     }
-
-    return {}
   }
 
   const handleIssueSelect = (issue) => {
@@ -198,11 +232,13 @@ export default function StoryPointEstimatorComponent({ repository }) {
     return 'Low'
   }
 
-  if (!isLinearAuthenticated) {
+  const isProjectAuthenticated = isLinearAuthenticated || isJiraAuthenticated
+  
+  if (!isProjectAuthenticated) {
     return (
       <div className="card">
         <h2 className="text-xl font-bold text-white mb-4">AI Story Point Estimator</h2>
-        <p className="text-gray-400">Connect Linear to get AI-powered story point estimates based on your performance</p>
+        <p className="text-gray-400">Connect Linear or JIRA to get AI-powered story point estimates based on your Git performance data from {gitProvider?.name || 'your repository'}</p>
       </div>
     )
   }
@@ -214,10 +250,10 @@ export default function StoryPointEstimatorComponent({ repository }) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-bold text-white">AI Story Point Estimator</h2>
-            <p className="text-gray-400">Fibonacci estimates based on your performance patterns</p>
+            <p className="text-gray-400">Fibonacci estimates for {projectProvider} issues based on your {gitProvider?.name || 'Git'} performance patterns</p>
             {data.issues.some(issue => issue.id?.startsWith('demo-')) && (
               <div className="mt-2 px-3 py-1 bg-yellow-900/20 border border-yellow-700 rounded text-xs text-yellow-300">
-                ⚠️ Demo mode - Connect Linear API for real data
+                ⚠️ Demo mode - {projectProvider} API connection failed, using sample data
               </div>
             )}
           </div>
@@ -245,7 +281,7 @@ export default function StoryPointEstimatorComponent({ repository }) {
             <h3 className="text-lg font-bold text-white mb-4">🎯 Quick Wins</h3>
             <div className="space-y-3">
               {data.recommendations.quickWins.length > 0 ? (
-                data.recommendations.quickWins.map((item, index) => (
+                data.recommendations.quickWins.map((item) => (
                   <div key={item.issue.id} className="p-3 bg-green-900/20 border border-green-700 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-green-400 font-medium">

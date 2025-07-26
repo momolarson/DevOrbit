@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 
 export default function SummaryCards({ repository }) {
-  const { token } = useAuth()
+  const { gitProvider } = useAuth()
   const [metrics, setMetrics] = useState({
     totalCommits: 0,
     avgCommitsPerDay: 0,
@@ -12,10 +12,19 @@ export default function SummaryCards({ repository }) {
   })
 
   useEffect(() => {
-    if (repository && token) {
+    if (repository && gitProvider) {
       fetchMetrics()
+    } else {
+      // Reset metrics when no repository is selected
+      setMetrics({
+        totalCommits: 0,
+        avgCommitsPerDay: 0,
+        medianResponseTime: 0,
+        activeDays: 0,
+        loading: false
+      })
     }
-  }, [repository, token])
+  }, [repository, gitProvider])
 
   const fetchMetrics = async () => {
     setMetrics(prev => ({ ...prev, loading: true }))
@@ -23,46 +32,30 @@ export default function SummaryCards({ repository }) {
     try {
       // Fetch commits for the last 30 days
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-      const url = `https://api.github.com/repos/${repository.owner.login}/${repository.name}/commits?since=${thirtyDaysAgo}&per_page=100`
       
-      console.log('Fetching commits from:', url)
+      console.log('Fetching commits...')
       
-      const commitsResponse = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
+      const commits = await gitProvider.fetchCommits(repository, thirtyDaysAgo, 100)
+      console.log('Fetched commits:', commits.length)
+      
+      // Calculate metrics
+      const commitsByDay = {}
+      commits.forEach(commit => {
+        const date = new Date(commit.author.date).toDateString()
+        commitsByDay[date] = (commitsByDay[date] || 0) + 1
       })
+      
+      const activeDays = Object.keys(commitsByDay).length
+      const totalCommits = commits.length
+      const avgCommitsPerDay = activeDays > 0 ? totalCommits / activeDays : 0
 
-      console.log('Commits response status:', commitsResponse.status)
-
-      if (commitsResponse.ok) {
-        const commits = await commitsResponse.json()
-        console.log('Fetched commits:', commits.length)
-        
-        // Calculate metrics
-        const commitsByDay = {}
-        commits.forEach(commit => {
-          const date = new Date(commit.commit.author.date).toDateString()
-          commitsByDay[date] = (commitsByDay[date] || 0) + 1
-        })
-        
-        const activeDays = Object.keys(commitsByDay).length
-        const totalCommits = commits.length
-        const avgCommitsPerDay = activeDays > 0 ? totalCommits / activeDays : 0
-
-        setMetrics({
-          totalCommits,
-          avgCommitsPerDay: Math.round(avgCommitsPerDay * 10) / 10,
-          medianResponseTime: 8.5, // Placeholder - would need PR comment analysis
-          activeDays,
-          loading: false
-        })
-      } else {
-        const errorText = await commitsResponse.text()
-        console.error('API Error:', commitsResponse.status, errorText)
-        throw new Error(`API responded with status ${commitsResponse.status}`)
-      }
+      setMetrics({
+        totalCommits,
+        avgCommitsPerDay: Math.round(avgCommitsPerDay * 10) / 10,
+        medianResponseTime: 8.5, // Placeholder - would need PR comment analysis
+        activeDays,
+        loading: false
+      })
     } catch (error) {
       console.error('Error fetching metrics:', error)
       setMetrics({
