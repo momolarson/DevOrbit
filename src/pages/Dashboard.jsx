@@ -11,11 +11,10 @@ import CommitsDashboard from '../components/dashboards/CommitsDashboard'
 import CommentsDashboard from '../components/dashboards/CommentsDashboard'
 import CodeDashboard from '../components/dashboards/CodeDashboard'
 import TeamDashboard from '../components/dashboards/TeamDashboard'
-import LinearDashboard from '../components/dashboards/LinearDashboard'
 import UnifiedProjectDashboard from '../components/dashboards/UnifiedProjectDashboard'
 
 export default function Dashboard({ currentView = 'overview', onViewChange }) {
-  const { isAuthenticated, provider, gitProvider, token } = useAuth()
+  const { isAuthenticated, provider, token } = useAuth()
   const [selectedRepo, setSelectedRepo] = useState(null)
   const [dashboardData] = useState({
     commits: [],

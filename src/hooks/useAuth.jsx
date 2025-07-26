@@ -73,8 +73,6 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = (selectedProvider = provider) => {
-    const providerName = selectedProvider === PROVIDERS.GITHUB ? 'GitHub' : 'Bitbucket'
-    
     if (selectedProvider === PROVIDERS.BITBUCKET) {
       // For Bitbucket, we need both username and app password
       const username = prompt(

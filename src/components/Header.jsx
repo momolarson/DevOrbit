@@ -1,6 +1,6 @@
 import { useAuth } from '../hooks/useAuth'
 import { PROVIDERS, getProviderDisplayName } from '../services/gitProviders'
-import { PROJECT_PROVIDERS, getProjectProviderDisplayName } from '../services/projectProviders'
+import { PROJECT_PROVIDERS } from '../services/projectProviders'
 
 export default function Header({ sidebarOpen, setSidebarOpen }) {
   const { 

@@ -18,7 +18,6 @@ export default function StoryPointEstimatorComponent({ repository }) {
     loading: false
   })
   const [selectedIssue, setSelectedIssue] = useState(null)
-  const [estimatorInstance, setEstimatorInstance] = useState(null)
 
   useEffect(() => {
     const isProjectAuthenticated = (isLinearAuthenticated && linearToken) || (isJiraAuthenticated && jiraToken)
@@ -100,8 +99,6 @@ export default function StoryPointEstimatorComponent({ repository }) {
         gitData,
         userPerformance
       )
-
-      setEstimatorInstance(estimator)
 
       // Generate estimates for unestimated issues
       const estimates = estimator.estimateMultipleIssues(unestimatedIssues)
@@ -284,7 +281,7 @@ export default function StoryPointEstimatorComponent({ repository }) {
             <h3 className="text-lg font-bold text-white mb-4">🎯 Quick Wins</h3>
             <div className="space-y-3">
               {data.recommendations.quickWins.length > 0 ? (
-                data.recommendations.quickWins.map((item, index) => (
+                data.recommendations.quickWins.map((item) => (
                   <div key={item.issue.id} className="p-3 bg-green-900/20 border border-green-700 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-green-400 font-medium">

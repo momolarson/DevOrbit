@@ -24,7 +24,7 @@ export default function UnifiedProjectDashboard({ repository, onBack }) {
     projects: [],
     loading: false
   })
-  const [selectedTeam, setSelectedTeam] = useState(null)
+  const [selectedTeam] = useState(null)
   const [metrics, setMetrics] = useState(null)
   const [dateRange, setDateRange] = useState(30)
 
