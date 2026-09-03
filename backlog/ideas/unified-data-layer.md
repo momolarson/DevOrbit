@@ -1,6 +1,6 @@
 ---
 title: One data service with real pagination and cache
-status: planned
+status: in-progress
 phase: 1
 effort: M
 value: high
@@ -23,3 +23,5 @@ Expose rate limit remaining and surface it in the UI or CLI output.
 ## Notes
 This is the piece of the existing code most worth carrying forward in
 spirit. `gitProviders.js` has a start on it.
+
+2026-09-02: `src/github/client.js` owns all network access with full GraphQL cursor and REST Link pagination and rate limit tracking. Not yet built: IndexedDB or on-disk cache with since-timestamps. A week of one account was 5 requests, so caching is low priority until windows get long.

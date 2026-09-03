@@ -1,6 +1,6 @@
 ---
 title: Tests that test something
-status: idea
+status: in-progress
 phase: 1
 effort: M
 value: medium
@@ -16,3 +16,5 @@ Unit tests for every fact function against fixture JSON captured from the
 real API (scrubbed). A snapshot test for the facts document over a fixed
 fixture week. Keep the LLM out of the test suite except for the small
 hand-checked eval set, which runs on demand and not in CI.
+
+2026-09-02: `node --test` with scrubbed GraphQL-shaped fixtures covers the facts builder and utilities (10 tests). Still to add: a snapshot test of a full facts document, and client pagination tests with a fake fetch.

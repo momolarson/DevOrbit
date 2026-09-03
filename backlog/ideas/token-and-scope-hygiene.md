@@ -1,6 +1,6 @@
 ---
 title: Token storage and minimal scopes
-status: idea
+status: done
 phase: 1
 effort: S
 value: medium
@@ -21,3 +21,5 @@ delivery form becomes a CLI, drop token handling entirely and use
 For the web form, consider the OAuth device flow, which needs no client
 secret in the bundle. The current `.env.example` asks for a client secret,
 which should never ship in a front-end build.
+
+Done by design 2026-09-02: the CLI takes its token from `gh auth token` or `GITHUB_TOKEN` and stores nothing itself. No OAuth client secret anywhere.

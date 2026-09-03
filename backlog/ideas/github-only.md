@@ -1,6 +1,6 @@
 ---
 title: Narrow to GitHub only
-status: planned
+status: done
 phase: 1
 effort: S
 value: high
@@ -21,3 +21,5 @@ Linear classes.
 
 ## Notes
 Decision recorded in `../01-decisions.md`.
+
+Done 2026-09-02. The new `src/github` layer targets GitHub only.

@@ -1,0 +1,40 @@
+{
+  "repository": { "nameWithOwner": "acme/api", "isPrivate": true },
+  "number": 42,
+  "title": "Add retry to payment client",
+  "url": "https://github.com/acme/api/pull/42",
+  "body": "Retries transient failures.\n\nCloses #40\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "state": "MERGED",
+  "isDraft": false,
+  "createdAt": "2026-08-25T10:00:00Z",
+  "mergedAt": "2026-08-27T15:00:00Z",
+  "closedAt": "2026-08-27T15:00:00Z",
+  "updatedAt": "2026-08-27T15:00:00Z",
+  "additions": 120,
+  "deletions": 30,
+  "changedFiles": 4,
+  "author": { "login": "momo", "__typename": "User" },
+  "closingIssuesReferences": { "totalCount": 1 },
+  "commits": {
+    "totalCount": 2,
+    "nodes": [
+      { "commit": { "oid": "aaa111", "messageHeadline": "Add retry", "message": "Add retry\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>", "committedDate": "2026-08-25T09:00:00Z", "url": "https://github.com/acme/api/commit/aaa111", "author": { "user": { "login": "momo" } } } },
+      { "commit": { "oid": "bbb222", "messageHeadline": "Address review", "message": "Address review", "committedDate": "2026-08-26T16:00:00Z", "url": "https://github.com/acme/api/commit/bbb222", "author": { "user": { "login": "momo" } } } }
+    ]
+  },
+  "reviews": {
+    "totalCount": 3,
+    "nodes": [
+      { "author": { "login": "dana", "__typename": "User" }, "submittedAt": "2026-08-26T12:00:00Z", "state": "CHANGES_REQUESTED", "url": "https://github.com/acme/api/pull/42#pullrequestreview-1",
+        "comments": { "nodes": [ { "author": { "login": "dana", "__typename": "User" }, "createdAt": "2026-08-26T12:00:00Z", "body": "Why not exponential backoff here?", "url": "https://github.com/acme/api/pull/42#discussion_r1" } ] } },
+      { "author": { "login": "dana", "__typename": "User" }, "submittedAt": "2026-08-27T09:00:00Z", "state": "APPROVED", "url": "https://github.com/acme/api/pull/42#pullrequestreview-2", "comments": { "nodes": [] } },
+      { "author": { "login": "github-actions[bot]", "__typename": "Bot" }, "submittedAt": "2026-08-25T10:05:00Z", "state": "COMMENTED", "url": "https://github.com/acme/api/pull/42#pullrequestreview-0", "comments": { "nodes": [] } }
+    ]
+  },
+  "comments": {
+    "totalCount": 1,
+    "nodes": [
+      { "author": { "login": "momo", "__typename": "User" }, "createdAt": "2026-08-26T13:00:00Z", "body": "Good call, switched to backoff.", "url": "https://github.com/acme/api/pull/42#issuecomment-1" }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "repository": { "nameWithOwner": "acme/web", "isPrivate": true },
+  "number": 7,
+  "title": "Redesign settings page",
+  "url": "https://github.com/acme/web/pull/7",
+  "body": "",
+  "state": "OPEN",
+  "isDraft": false,
+  "createdAt": "2026-08-28T08:00:00Z",
+  "mergedAt": null,
+  "closedAt": null,
+  "updatedAt": "2026-08-29T08:00:00Z",
+  "additions": 900,
+  "deletions": 200,
+  "changedFiles": 22,
+  "author": { "login": "dana", "__typename": "User" },
+  "closingIssuesReferences": { "totalCount": 0 },
+  "commits": { "totalCount": 1, "nodes": [] },
+  "reviews": {
+    "totalCount": 1,
+    "nodes": [
+      { "author": { "login": "momo", "__typename": "User" }, "submittedAt": "2026-08-28T20:00:00Z", "state": "COMMENTED", "url": "https://github.com/acme/web/pull/7#pullrequestreview-9",
+        "comments": { "nodes": [
+          { "author": { "login": "momo", "__typename": "User" }, "createdAt": "2026-08-28T20:00:00Z", "body": "nit: trailing comma", "url": "https://github.com/acme/web/pull/7#discussion_r9" },
+          { "author": { "login": "momo", "__typename": "User" }, "createdAt": "2026-08-28T20:01:00Z", "body": "This drops the error state entirely. Was that intended?", "url": "https://github.com/acme/web/pull/7#discussion_r10" }
+        ] } }
+    ]
+  },
+  "comments": { "totalCount": 0, "nodes": [] }
+}

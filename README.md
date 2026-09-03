@@ -1,129 +1,71 @@
-# DevOrbit - Because Managers Love Data, Right?
+# DevOrbit
 
-*The ultimate "help-yourself" GitHub analytics dashboard for engineers who want to vibe their way to peak performance while accidentally making their managers' jobs obsolete through sheer data-driven excellence.*
+**A personal engineering retro, narrated by AI, over your own GitHub activity.**
 
-## What's This About?
+Engineer-first. Local-first. Open source.
 
-Why wait for managers to ask about productivity when you can eliminate the middleman entirely? DevOrbit transforms your GitHub activity into actionable data that helps you prioritize work, optimize workflows, and make engineering decisions without needing someone else to tell you what's important. Because the best manager is no manager at all.
+Tools like GitPrime, Pluralsight Flow, LinearB, and Swarmia point analytics
+at engineers on behalf of managers. DevOrbit points them at yourself, on your
+own machine, for your own benefit. It reads what you shipped, reviewed, and
+discussed, computes the facts, and produces a rich report that tells you
+something you could not easily see yourself, with a link to the evidence
+behind every claim, and two or three things worth trying next week.
 
-This React-based dashboard analyzes your commits, PRs, and code reviews to help you:
-- **Optimize your workflow** (so you can work smarter, not harder)
-- **Identify bottlenecks** (spoiler: it's usually meetings)
-- **Track team compatibility** (find out who actually reviews your code vs. who just approves it)
-- **Generate actionable insights** (that you'll actually use, unlike most performance reviews)
+> **Status: early rebuild.** The first version (2025) was a React dashboard.
+> It is being rebuilt as a CLI. Today it computes the facts document. The
+> narrated HTML report is next. See [`backlog/`](backlog/) for the plan.
 
-## Features That Actually Matter
+## Install
 
-- **📊 Commit Analytics**: Visualize your productivity patterns and prove you're not just pushing whitespace changes
-- **💬 PR Comment Analysis**: Track response times and see who's really engaging with your code (hint: it's probably not management)
-- **🤝 Team Compatibility Metrics**: Discover your real code review allies and collaboration patterns
-- **📈 Code Churn Analysis**: Identify which developers are actually refactoring vs. just thrashing code
-- **📋 Smart Recommendations**: Get data-backed suggestions for improvement (because you asked for feedback, not feelings)
-- **🌙 Dark Theme**: Because your eyes matter more than your manager's preference for "clean white interfaces"
-- **📄 Export Everything**: CSV and PDF reports for when you need to justify your existence to higher-ups
-
-## The Stack (For Fellow Engineers)
-
-- **React 18** + **Vite** (fast builds, faster deploys)
-- **Tailwind CSS** (utility-first, manager-friendly-second)
-- **Chart.js** (pretty graphs that speak louder than words)
-- **GitHub API** (the source of truth your standup updates wish they were)
-- **LocalStorage** (because not everything needs a database)
-
-## Getting Started (It's Actually Easy)
-
-### Prerequisites
-- Node.js 18+ (you're already using it, right?)
-- A GitHub account with actual repositories (not just tutorial repos)
-- The desire to let data do the talking
-
-### Installation
+Requires Node 22+ and the [GitHub CLI](https://cli.github.com/) logged in
+(`gh auth login`), or a `GITHUB_TOKEN` in the environment.
 
 ```bash
-# Clone this beautiful chaos
-git clone <repository-url>
-cd devorbit
-
-# Install the good stuff
+git clone https://github.com/momolarson/DevOrbit.git
+cd DevOrbit
 npm install
-
-# Fire it up
-npm run dev
+node bin/devorbit.js auth
 ```
 
-### Authentication Setup
+## Use
 
-**Option 1: Personal Access Token (Recommended for Developers)**
-1. GitHub Settings → Developer settings → Personal access tokens
-2. Generate token with `repo` and `user` scopes
-3. Paste it when DevOrbit asks (it will ask nicely)
+```bash
+# Facts about your last week, across every repo you touched
+node bin/devorbit.js facts --since 7d
 
-**Option 2: OAuth (For When You Want to Impress People)**
-1. Create GitHub OAuth App
-2. Set callback URL: `http://localhost:3000/auth/callback`
-3. Add Client ID to environment variables
-4. Feel slightly more professional
-
-## How to Use This Power
-
-1. **Login** with your GitHub credentials
-2. **Select a repository** (pick one you actually work on)
-3. **Watch the magic happen** as your GitHub activity transforms into meaningful insights
-4. **Use the data** to optimize your workflow, identify improvement areas, and prove your worth
-5. **Optional**: Share these insights in your next performance review and watch managers struggle to find fault with objective data
-
-## Project Structure (For the Curious)
-
-```
-src/
-├── components/          # UI components that actually work
-│   ├── dashboards/     # Specialized analytics views
-│   ├── CommitChart.jsx # Your productivity, visualized
-│   ├── CommentAnalysis.jsx # PR engagement metrics
-│   └── TeamCompatibility.jsx # Who really has your back
-├── pages/              # Main application views
-├── hooks/              # Custom React hooks (useAuth, etc.)
-└── utils/              # Helper functions (coming soon™)
+# A quarter, printed to stdout
+node bin/devorbit.js facts --since 3m --stdout | jq .summary
 ```
 
-## API Considerations (The Fine Print)
+The facts document includes, per PR you authored: size, description length,
+linked issue, time to first human review, review rounds, commits after
+review started, reviewers, and whether an AI coding agent was involved.
+Per PR you reviewed: your response time and your comments. Plus commits
+across all repos, comments given and received, and who you collaborate
+with. Facts land in `~/.devorbit/facts/` by default.
 
-GitHub gives you 5,000 API requests per hour. DevOrbit caches responses locally because:
-- We respect rate limits (unlike some managers respect your time)
-- Performance matters
-- Your data stays on your machine
+## What it does not do
 
-## The Roadmap (What's Coming Next)
+- It does not send your data anywhere except api.github.com. (Phase 2 will
+  add an optional model call with your own key or a local model.)
+- It does not rank people. Collaborator counts describe who you work with.
+- It does not measure productivity by commit count. Those numbers are in
+  the facts because they are facts, not because they matter.
 
-- [ ] **Advanced Filtering**: Drill down into specific time periods, file types, and team members
-- [ ] **Predictive Analytics**: Machine learning models to predict productivity trends
-- [ ] **Integration APIs**: Connect with Slack, Jira, and other tools you actually use
-- [ ] **Team Dashboards**: Aggregate views for technical leads who want to support (not micromanage) their teams
-- [ ] **Custom Metrics**: Define your own KPIs that actually matter to engineering work
+## Roadmap
 
-## Contributing (Join the Revolution)
+See [`backlog/00-vision.md`](backlog/00-vision.md). Short version: facts
+(done), bring-your-own-model narration, a rich self-contained HTML report
+with charts and grounded actions, PDF export, then a PR hygiene coach,
+review comment classification, and metrics on AI-assisted work.
 
-Found a bug? Want to add a feature? PRs welcome! This project is built by engineers, for engineers.
+## Contributing
 
-1. Fork it
-2. Branch it (`git checkout -b feature/awesome-addition`)
-3. Commit it (`git commit -m 'Add awesome feature'`)
-4. Push it (`git push origin feature/awesome-addition`)
-5. PR it
-
-## Security & Privacy
-
-- Your GitHub token stays local (we're not interested in your repos)
-- All data processing happens in your browser
-- No tracking, no analytics, no BS
-- Open source because transparency matters
+Ideas go in `backlog/ideas/` as a markdown file with the frontmatter shown
+in `backlog/README.md`. Tests run with `npm test`. If you use Claude Code or
+a similar agent, `npx skills add emilkowalski/skill` installs the design
+engineering skills used for the report template; they are not committed.
 
 ## License
 
-MIT License - Because good tools should be free for everyone.
-
----
-
-*DevOrbit: Helping engineers prove their worth, one commit at a time. 🚀*
-
-**Disclaimer**: This tool may cause spontaneous increases in productivity, clearer communication with stakeholders, and accidentally making middle management nervous. Use responsibly.
+MIT

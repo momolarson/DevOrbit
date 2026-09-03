@@ -1,6 +1,6 @@
 ---
 title: Person-centric data model across repos
-status: planned
+status: done
 phase: 1
 effort: M
 value: high
@@ -27,3 +27,5 @@ The search API has its own rate limit (30 requests a minute) and caps at
 1000 results. Fine for one person over a quarter. GraphQL can fetch a PR
 with its reviews and comments in one round trip, which the REST version
 does as three.
+
+Done 2026-09-02. `devorbit facts` searches `author:`, `reviewed-by:`, and `commenter:` across all repos and groups by repo only in output. Verified against `gh api` counts on the real account.

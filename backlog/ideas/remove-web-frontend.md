@@ -1,6 +1,6 @@
 ---
 title: Remove the web front end and Vite
-status: planned
+status: done
 phase: 1
 effort: S
 value: high
@@ -32,3 +32,5 @@ On a branch:
 ## Notes
 Nothing here is lost; git history has it all. Decision recorded in
 `../01-decisions.md` on 2026-09-02.
+
+Done 2026-09-02 on branch `momo/cli-rebuild`. Front end, Vite, Jest, Babel, coverage, and the Linear test script removed. Fresh package.json with zero runtime dependencies.
