@@ -35,3 +35,20 @@ github-token.txt
 *.key
 *.pem
 config/secrets.json
+# DevOrbit output: facts and reports contain private repo and colleague data
+reports/
+facts/
+*.facts.json
+*.retro.md
+*.retro.html
+*.retro.pdf
+coverage
+
+# Personal notes
+backlog/private/
+notes/
+
+# Editor agent skills (install with: npx skills add emilkowalski/skill)
+.agents/
+.claude/skills/
+skills-lock.json
